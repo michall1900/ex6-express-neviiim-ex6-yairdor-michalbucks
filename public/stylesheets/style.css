@@ -6,3 +6,8 @@ body {
 a {
   color: #00B7FF;
 }
+
+.images{
+  max-width: 300px;
+  max-height: 300px;
+}
