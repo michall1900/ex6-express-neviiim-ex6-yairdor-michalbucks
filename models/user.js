@@ -37,7 +37,7 @@ class User {
 
     validateAttributes(checkWithPassword = false){
         if (!fieldsValidation.isValidEmail(this.emailAdd) || !fieldsValidation.isValidName(this.lName) ||
-            !!fieldsValidation.isValidName(this.fName))
+            !fieldsValidation.isValidName(this.fName))
             throw new Error(this.INVALID_FIELD_ERR)
         if (this.isEmailExist())
             throw new Error(this.USER_EXIST_ERR)

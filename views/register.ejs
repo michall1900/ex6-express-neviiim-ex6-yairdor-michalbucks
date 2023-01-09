@@ -1,0 +1,17 @@
+<%- include('includes/head.ejs')%>
+<%- include('includes/login_and_register_start.ejs')%>
+<div class="row text-center justify-content-center">
+    <form class="col-6" id="register-form" action="/users/register" method="post">
+        <div class="row text-center justify-content-center">
+            <input name= "emailAdd" id="emailAdd" type="email" placeholder="Enter Email" class="form-control col-12">
+            <input name= "fName" id="fName" type="text" placeholder="Enter First Name" class="form-control col-12 mt-2">
+            <input name= "lName" id="lName" type="text" placeholder="Enter Last Name" class="form-control col-12 mt-2">
+            <input type="submit" value="Next" class="btn btn-primary col-4 mt-2">
+        </div>
+    </form>
+    <form class="col-12 mt-5" action="/">
+        <div>Already registered? go to <button type="submit" class="btn btn-link">login</button> page</div>
+    </form>
+</div>
+</div>
+<%- include('includes/end.ejs')%>
