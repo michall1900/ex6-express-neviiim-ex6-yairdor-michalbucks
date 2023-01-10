@@ -1,86 +1,106 @@
-const User = require("../models/user.js")
+const User = require("../modules/user.js")
+const validation = require("../modules/validationModule.js")
+const cookiesHandler = require("../modules/cookiesHandler.js")
+const Cookies = require('cookies')
+
+function trimAndLower(string){
+    if (validation.isString(string))
+        return string.trim().toLowerCase()
+    return string
+}
 
 
 exports.getLoginPage = (req, res, next) =>{
+
     res.render('login',{
-        tabTitle: "login",
+        tabTitle: "Login",
         pageTitle: "Please sign in",
-        path:'/'
+        subTitle: "Exercise 6 (part 1: registration)",
+        error: req.data,
     })
 }
 
 
 exports.getFirstRegisterUser = (req, res,next)=>{
-    //to do - check cookie and insert into the object if the cookie exist.
-
+    let cookies = new Cookies(req,res);
+    let values = {}
+    cookiesHandler.USER_DATA_KEYS.forEach((key)=>{values[key] = cookies.get(key)})
     res.render('register',{
-        tabTitle: "register",
+        tabTitle: "Register",
         pageTitle: "Please register",
-        path:'/users/register'
+        subTitle: "Register",
+        error: req.data,
+        email:values.email,
+        fName:values.fName,
+        lName: values.lName
     })
 }
 
-exports.postFirstRegisterUser = (req,res, next)=>{
-    //There is a duplicated code here, need to be changed.
-    let user = new User(req.body.emailAdd.trim().toLowerCase(), req.body.fName.trim().toLowerCase(),
-        req.body.lName.trim().toLowerCase())
+exports.postFirstRegisterUser = (req,res)=>{
+    let params = [req.body.emailAdd, req.body.fName, req.body.lName]
+    params = params.map((string)=> trimAndLower(string))
+    let user = new User(...params)
+
     try{
         user.validateAttributes()
-        //to do- create cookie
+        cookiesHandler.createUserDataCookie(req,res,...params)
         res.redirect("/users/register-password")
     }
-    // This is duplicate from the code before.
     catch (err){
-        res.render('register',{
-            tabTitle: "register",
-            pageTitle: "Please register",
-            path:'/users/register',
-            error:err.message,
-            formData: req.body
+        cookiesHandler.createErrorCookie(req, res, err.message)
+        res.redirect('/users/register')
+    }
+
+
+}
+
+exports.getPassword = (req,res)=>{
+    // to do- check if cookie still exist. If it isn't - back to login + error message.
+    let cookies = new Cookies(req,res);
+    let values = {}
+    cookiesHandler.USER_DATA_KEYS.forEach((key)=>{values[key] = cookies.get(key)})
+    if (![...Object.values(values)].every((val)=>!!val)){
+        // createErrorCookie(res,req,"You can't enter a password before you entered other data." +
+        //     "Please fill your details")
+        res.redirect('/users/register')
+    }
+    else {
+        res.render('register-password', {
+            tabTitle: "Password",
+            pageTitle: "Please choose a password",
+            subTitle: "Register",
+            error: req.data
         })
     }
 
 
 }
 
-exports.getPassword = (req,res, next)=>{
-    // to do- check if cookie still exist. If it isn't - back to login + error message.
+exports.postPassword = (req,res)=>{
 
-    //cookie exist
-    res.render('register-password',{
-        tabTitle: "password",
-        pageTitle: "Please choose a password"
-    })
+    let cookies = new Cookies(req,res);
+    let params = []
+    cookiesHandler.USER_DATA_KEYS.forEach((key,index)=>{params[index] = cookies.get(key)})
+    if (!params.every((val)=>!!val)){
+        cookiesHandler.createErrorCookie(req,res,"Registration process expired, please start again")
+        res.redirect('/users/register')
+    }
+    params = params.map((string)=> trimAndLower(string))
+    let user = new User(...params, req.body.password1, req.body.password2)
 
-}
-
-exports.postPassword = (req,res, next)=>{
-
-    //to do - same as before but here we need to return to register + error message (if cookie isn't exist).
-
-    //cookie exist, take it's parameter into User's constructor.
-    let user = new User()
     try{
         user.save()
-
+        cookiesHandler.createErrorCookie(req,res,cookiesHandler.REGISTER_SUCCESS)
+        //clear all cookie's fields.
+        res.redirect('/')
     }
 
-    // It's not a nice solution, but it will work.
     catch (err){
-        if (err.message === user.INVALID_PASSWORD_ERR){
-            res.render ('register-password',{
-                tabTitle: "password",
-                pageTitle: "Please choose a password",
-                error: err.message
-            })
-        }
+        cookiesHandler.createErrorCookie(req,res,err.message)
+        if (err.message === user.INVALID_PASSWORD_ERR)
+            res.redirect('/users/register-password')
         else{
-            res.redirect('register',{
-                tabTitle: "register",
-                pageTitle: "Please register",
-                path:'/users/register',
-                error:err.message
-            })
+            res.redirect('/users/register')
         }
 
     }

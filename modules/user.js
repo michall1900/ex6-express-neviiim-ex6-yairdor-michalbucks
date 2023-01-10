@@ -3,15 +3,17 @@ const fieldsValidation = require("./fieldsValidationModule")
 
 class User {
     INVALID_FIELD_ERR = 'User must have valid email address, first name, last name and password.'
-    USER_EXIST_ERR =  'User is already exist'
+    USER_EXIST_ERR =  'This email is already in use, please choose another one'
     INVALID_PASSWORD_ERR = "The password is invalid. Make sure that the first one is the same as the " +
         "second and none of them is empty"
 
-    constructor(emailAdd, fName,lName, password) {
+    constructor(emailAdd, fName,lName, password1, password2) {
         this.emailAdd=emailAdd
         this.fName = fName
         this.lName = lName
-        this.password = password
+        this.password1 = password1
+        this.password2 = password2
+
     }
 
     save() {
@@ -37,11 +39,11 @@ class User {
 
     validateAttributes(checkWithPassword = false){
         if (!fieldsValidation.isValidEmail(this.emailAdd) || !fieldsValidation.isValidName(this.lName) ||
-            !!fieldsValidation.isValidName(this.fName))
+            !fieldsValidation.isValidName(this.fName))
             throw new Error(this.INVALID_FIELD_ERR)
         if (this.isEmailExist())
             throw new Error(this.USER_EXIST_ERR)
-        if (checkWithPassword && !fieldsValidation.isValidPassword(this.password)){
+        if (checkWithPassword && !fieldsValidation.isValidPassword(this.password1, this.password2)){
             throw new Error(this.INVALID_PASSWORD_ERR)
         }
     }
