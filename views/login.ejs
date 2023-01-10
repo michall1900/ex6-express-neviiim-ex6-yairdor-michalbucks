@@ -4,14 +4,14 @@
 <div class="row text-center justify-content-center">
   <form class="col-6" id="login-form" action="">
     <div class="row text-center justify-content-center">
-      <input id="sign-in-email" type="email" placeholder="Enter Email" class="form-control col-12">
-      <input id="sign-in-password" type="password" placeholder="Enter Password" class="form-control col-12 mt-2d">
-      <input type="submit" value="Sign In" class="btn btn-primary col-4 mt-2">
+      <input id="sign-in-email" type="email" placeholder="Enter Email" class="form-control col-12 mt-2" required>
+      <input id="sign-in-password" type="password" placeholder="Enter Password" class="form-control col-12 mt-2" required>
+      <input type="submit" value="Sign In" class="btn btn-primary col-4 mt-2" required>
     </div>
   </form>
-  <form class="col-12 mt-5" action="/users/register">
-    <div>Click here to <button type="submit" class="btn btn-link">register</button></div>
-  </form>
+  <p class="col-12 mt-5">
+    Click here to <a href="/users/register">register</a>
+  </p>
 </div>
 </div>
 <%- include('includes/end.ejs')%>

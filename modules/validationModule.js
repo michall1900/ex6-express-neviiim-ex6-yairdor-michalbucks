@@ -27,7 +27,6 @@ const validationModule = (function(){
     const isInPattern = (object, pattern) =>{
         return (isString(object) && object.match(pattern))
     }
-    //I don't know if is it the right place to write that.. I think it's need to be in user while creating it.
 
     return{
         isNotEmpty, isInMaximumLength, isInMinimumLength,isInPattern, isString, isValidEmailTemplate

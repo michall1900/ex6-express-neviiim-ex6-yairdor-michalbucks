@@ -7,15 +7,17 @@ const errorController = require('./controllers/error');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 const createError = require('http-errors');
+const users = require('./controllers/users')
 
 const app = express();
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
-
+app.set('etag', false)
 
 const loginRoutes = require('./routes/login');
 const registerRoutes = require('./routes/register');
+const forAllRoutes = require('./routes/forAll')
 
 
 // plug in the body parser middleware and static middleware
@@ -29,6 +31,10 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+//app.use()
+//Thinking about move it to another url start.
+app.use(forAllRoutes)
 app.use(loginRoutes);
 app.use('/users', registerRoutes);
 
