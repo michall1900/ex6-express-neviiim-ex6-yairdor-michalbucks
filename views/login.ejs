@@ -4,8 +4,13 @@
 <div class="row text-center justify-content-center">
   <form class="col-6" id="login-form" action="">
     <div class="row text-center justify-content-center">
-      <input id="sign-in-email" type="email" placeholder="Enter Email" class="form-control col-12 mt-2" required>
-      <input id="sign-in-password" type="password" placeholder="Enter Password" class="form-control col-12 mt-2" required>
+      <label for="sign-in-email"></label>
+      <input id="sign-in-email" type="email" placeholder="Enter Email" class="form-control col-12 mt-2" required
+      pattern='/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/'
+      maxlength="32">
+      <label for="sign-in-password"></label>
+      <input id="sign-in-password" type="password" placeholder="Enter Password" class="form-control col-12 mt-2"
+      maxlength="32" required>
       <input type="submit" value="Sign In" class="btn btn-primary col-4 mt-2" required>
     </div>
   </form>
