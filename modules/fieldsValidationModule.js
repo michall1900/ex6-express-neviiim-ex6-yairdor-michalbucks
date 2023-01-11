@@ -1,6 +1,6 @@
 const validationModule = require("./validationModule.js")
 
-module.exports= (function() {
+const cookiesHandler = (function() {
     const NAME_PATTERN = "^[a-zA-Z]*$"
     const MIN_NAME_LENGTH = 3
     const MAX_FIELD_SIZE = 32
@@ -21,3 +21,5 @@ module.exports= (function() {
         }
     }
 })();
+
+module.exports = cookiesHandler
