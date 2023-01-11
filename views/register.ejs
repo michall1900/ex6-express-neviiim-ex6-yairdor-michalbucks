@@ -3,7 +3,7 @@
 <div class="row text-center justify-content-center">
     <form class="col-6" id="register-form" action="/users/register" method="post">
         <div class="row text-center justify-content-center">
-            <input name= "emailAdd" id="emailAdd" type="email" placeholder="Enter Email"
+            <input name= "email" id="email" type="email" placeholder="Enter Email"
                    class="form-control col-12" <%if (email) {%> value=<%=email%> <%}%> required>
             <input name= "fName" id="fName" type="text" placeholder="Enter First Name"
                    class="form-control col-12 mt-2" <%if (fName) {%> value=<%=fName%> <%}%> required>
