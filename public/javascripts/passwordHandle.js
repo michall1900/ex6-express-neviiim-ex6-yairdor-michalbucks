@@ -13,7 +13,7 @@
         if (password1 === password2)
             event.target.submit()
         else{
-            document.getElementById("errorMsg").innerText = DISTINCT_PASSWORD_ERR
+            document.getElementById("errorMsg").innerHTML = `${DISTINCT_PASSWORD_ERR}`
         }
     }
 
