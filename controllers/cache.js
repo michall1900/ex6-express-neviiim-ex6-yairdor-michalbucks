@@ -1,5 +1,5 @@
 /**
- * Sets browser's cache settings
+ * Sets browser's cache settings.
  * @param req
  * @param res
  * @param next

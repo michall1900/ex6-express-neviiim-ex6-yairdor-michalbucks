@@ -1,4 +1,4 @@
-const validationModule = require("./validationModule.js")
+
 const fieldsValidation = require("./fieldsValidationModule")
 
 class User {
@@ -16,11 +16,19 @@ class User {
 
     }
 
+    /**
+     * Saves the user inside user's data structure only if it is valid user.
+     * @throws error if the user is invalid.
+     */
     save() {
         this.validateAttributes(true)
         usersMap.set(this.emailAdd, this);
     }
 
+    /**
+     * Checks if the email address is already in user's data structure.
+     * @returns {boolean}
+     */
     isEmailExist(){
         return usersMap.has(this.emailAdd)
     }
@@ -37,6 +45,11 @@ class User {
     //
     // }
 
+    /**
+     * Checks if all attributes are valid.
+     * @param checkWithPassword - tell if there is need to validate password or not (will be change later)
+     * @throws Error - error if one (or more) user's attribute invalid.
+     */
     validateAttributes(checkWithPassword = false){
         if (!fieldsValidation.isValidEmail(this.emailAdd) || !fieldsValidation.isValidName(this.lName) ||
             !fieldsValidation.isValidName(this.fName))
