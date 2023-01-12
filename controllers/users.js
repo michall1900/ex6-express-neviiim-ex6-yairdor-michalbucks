@@ -120,7 +120,6 @@ exports.postFirstRegisterPage = (req,res)=>{
  * @param res
  */
 exports.getPassword = (req,res)=>{
-
     if (!req.data.isUserDataCookieExist){
         res.redirect('/users/register')
     }
