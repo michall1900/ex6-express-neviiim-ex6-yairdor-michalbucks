@@ -101,8 +101,8 @@ exports.postFirstRegisterPage = (req,res)=>{
     let user = new User(...paramsAfterTrim)
 
     try{
-        user.validateAttributes()
         cookiesHandler.createUserDataCookie(req,res,...params)
+        user.validateAttributes()
         res.redirect("/users/register-password")
     }
     catch (err){
