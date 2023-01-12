@@ -5,15 +5,15 @@
         <div class="row text-center justify-content-center">
             <input name= "email" id="email" type="email" placeholder="Enter Email"
                    class="form-control col-12" <%if (email) {%> value=<%=email%> <%}%> required
-            pattern='/^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/' maxlength="32">
+            pattern='^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$' maxlength="32">
             <label for="email"></label>
             <input name= "fName" id="fName" type="text" placeholder="Enter First Name"
                    class="form-control col-12 mt-2" <%if (fName) {%> value=<%=fName%> <%}%> required
-            pattern="^ *[a-zA-Z]{3,32} *">
+            maxlength="32" minlength="3" pattern="^ *[a-zA-Z]{3,32} *$">
             <label for="fName"></label>
             <input name= "lName" id="lName" type="text" placeholder="Enter Last Name"
                    class="form-control col-12 mt-2" <%if (lName) {%> value=<%=lName%> <%}%> required
-                   pattern="^ *[a-zA-Z]{3,32} *">
+                   maxlength="32" minlength="3" pattern="^ *[a-zA-Z]{3,32} *$">
             <label for="lName"></label>
             <input type="submit" value="Next" class="btn btn-primary col-4 mt-2">
         </div>
