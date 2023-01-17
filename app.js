@@ -19,7 +19,8 @@ app.set('views', path.join(__dirname, 'views'));
 
 const loginRoutes = require('./routes/login');
 const registerRoutes = require('./routes/register');
-const forAllRoutes = require('./routes/forAll')
+const forAllRoutes = require('./routes/forAll');
+const apiRoutes = require('./routes/api');
 
 
 // plug in the body parser middleware and static middleware
@@ -34,10 +35,10 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-//Thinking about move it to another url start.
 app.use(forAllRoutes)
 app.use(loginRoutes);
 app.use('/users', registerRoutes);
+app.use('/api', apiRoutes);
 
 
 //app.use(errorController.get404)
