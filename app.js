@@ -20,13 +20,21 @@ app.set('views', path.join(__dirname, 'views'));
 const loginRoutes = require('./routes/login');
 const registerRoutes = require('./routes/register');
 const forAllRoutes = require('./routes/forAll');
-const apiRoutes = require('./routes/api');
+const homeRoute = require('./routes/home');
+const session = require("express-session");
 
 
 // plug in the body parser middleware and static middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+
+app.use(session({
+    secret:"somesecretkey",
+    resave: false, // Force save of session for each request
+    saveUninitialized: false, // Save a session that is new, but has not been modified
+    cookie: {maxAge: Number.MAX_SAFE_INTEGER }
+}));
 
 
 app.use(logger('dev'));
@@ -38,7 +46,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(forAllRoutes)
 app.use(loginRoutes);
 app.use('/users', registerRoutes);
-app.use('/api', apiRoutes);
+app.use('/home', homeRoute);
 
 
 //app.use(errorController.get404)

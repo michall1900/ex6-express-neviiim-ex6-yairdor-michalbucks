@@ -37,6 +37,7 @@ function trimAndLower(string){
 //     })
 // }
 
+
 /**
  * This router is extract user's data from the cookie into req.data.
  * It created two keys and values: 1. key: userDataParams value: user's data, 2. isUserDataCookieExist : boolean
@@ -67,6 +68,20 @@ exports.getLoginPage = (req, res) =>{
         subTitle: "Exercise 6 (part 1: registration)",
         error: req.data.error,
     })
+}
+
+
+exports.postLogin = (req, res)=>{
+    //check req.body.email, req.body.password. It will be done with db.
+    //if user in db and valid, redirect him to '/home/' + save in session that he is login.
+
+    //here I assume that user is valid (without check it)
+    req.session.isLogin = true;
+    res.redirect("/home")
+
+    //if user is not in db, render current page with error message (will be change)
+
+
 }
 
 /**

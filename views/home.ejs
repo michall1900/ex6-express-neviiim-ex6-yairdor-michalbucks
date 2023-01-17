@@ -1,0 +1,47 @@
+<%- include('includes/head.ejs')%>
+<div class="container-fluid ">
+    <div class="row">
+        <div class="col-12">
+            <figure class="text-center">
+                <h1 class="display-1">NASA Social Network</h1>
+                <figcaption class="h3">Created by <cite title="Source Title">Yair Dor and Michal Bucks</cite></figcaption>
+            </figure>
+        </div>
+    </div>
+    <div class="row text-center d-none" id = "afterLogin">
+        <div class="col-12" id ="welcome"></div>
+        <form action="https://api.nasa.gov/planetary/apod" id="dateForm">
+            <label class="h5 col" for="pictureDate">Please choose a picture date:</label>
+            <input class = "col" type="date" id="pictureDate" name="pictureDate">
+            <button class="btn btn-primary mt-2 col" type="submit">Send</button>
+        </form>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <ul class="list-group" id="pictures">
+            </ul>
+        </div>
+    </div>
+    <div class="row mt-2"><div class="col me-auto">
+            <button type="button" class="btn btn-primary d-none" id="moreComments" >Load more</button></div>
+    </div>
+</div>
+<button type="button" class="btn btn-primary d-none" data-bs-toggle="modal" data-bs-target="#errorModal" id="errorModalBtn">
+</button>
+<div class="modal" tabindex="-1" id="errorModal" aria-labelledby="contentErrorModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="contentErrorModal">Error</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="closeModal1"></button>
+            </div>
+            <div class="modal-body text-danger h4" id="errorMessage">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeModal2">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('includes/end.ejs')%>
