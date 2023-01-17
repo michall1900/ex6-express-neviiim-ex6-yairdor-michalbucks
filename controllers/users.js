@@ -2,6 +2,8 @@ const User = require("../modules/user.js")
 const validation = require("../modules/validationModule.js")
 const cookiesHandler = require("../modules/cookiesHandler.js")
 const Cookies = require('cookies')
+const db = require('../models');
+const Sequelize = require('sequelize');
 
 const USER_PARAMS_INDEX = {"email":0, "fName":1, "lName":2};
 
@@ -16,6 +18,9 @@ function trimAndLower(string){
     return string
 }
 
+// function isEmailExist(req, res){
+//     return
+// }
 // function renderPasswordPage(res, errMsg){
 //     res.render('register-password', {
 //         tabTitle: "Password",
@@ -72,12 +77,25 @@ exports.getLoginPage = (req, res) =>{
 
 
 exports.postLogin = (req, res)=>{
+    return db.User.findOne({where:{email:req.body.email, password:req.body.password}})
+        .then((user) => {
+            req.session.isLogin = true
+            req.session.userName = `${user.lName} ${user.fName}`
+            req.session.userId = user.id
+            res.redirect("/home")
+        })
+        .catch((err)=>{
+            if (err instanceof Sequelize.ValidationError)
+                cookiesHandler.createErrorCookie(req, res, `Validation error: ${err}`)
+            else
+                cookiesHandler.createErrorCookie(req, res, `Oops, something went wrong ${err}`)
+            res.redirect("/")
+        })
     //check req.body.email, req.body.password. It will be done with db.
     //if user in db and valid, redirect him to '/home/' + save in session that he is login.
 
     //here I assume that user is valid (without check it)
-    req.session.isLogin = true;
-    res.redirect("/home")
+
 
     //if user is not in db, render current page with error message (will be change)
 
@@ -111,20 +129,21 @@ exports.getFirstRegisterPage = (req, res)=>{
  * @param res
  */
 exports.postFirstRegisterPage = (req,res)=>{
-    let params = [req.body.email, req.body.fName, req.body.lName]
-    let paramsAfterTrim = params.map((string)=> trimAndLower(string))
-    let user = new User(...paramsAfterTrim)
-
-    try{
-        cookiesHandler.createUserDataCookie(req,res,...params)
-        user.validateAttributes()
-        res.redirect("/users/register-password")
-    }
-    catch (err){
-        cookiesHandler.createErrorCookie(req, res, err.message)
-        res.redirect('/users/register')
-        //renderRegisterPage(req, res, err.message)
-    }
+    const params = [req.body.email, req.body.fName, req.body.lName]
+    //let paramsAfterTrim = params.map((string)=> trimAndLower(string))
+    //let user = new User(...paramsAfterTrim)
+    cookiesHandler.createUserDataCookie(req,res,...params)
+    return db.User.validate({
+        email: trimAndLower(req.body.email),
+        lName:trimAndLower(req.body.lName),
+        fName:trimAndLower(req.body.fName)})
+        .then((error)=>{
+            error? throw new Error(`${error}`): res.redirect("/users/register-password")
+        })
+        .catch((error)=>{
+            cookiesHandler.createErrorCookie(req, res, error.message ?? error)
+            res.redirect('/users/register')
+        })
 
 
 }
@@ -170,6 +189,7 @@ exports.postPassword = (req,res)=>{
     else {
         let params = (req.data.userDataParams).map((string) => trimAndLower(string))
         let user = new User(...params, req.body.password1, req.body.password2)
+
 
         try {
                 user.save()
