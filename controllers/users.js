@@ -77,8 +77,10 @@ exports.getLoginPage = (req, res) =>{
 
 
 exports.postLogin = (req, res)=>{
-    return db.User.findOne({where:{email:req.body.email, password:req.body.password}})
+    return db.User.findOne({where:{"email":req.body.email, "password":req.body.password}})
         .then((user) => {
+            if (!user)
+                throw "User not found."
             req.session.isLogin = true
             req.session.userName = `${user.lName} ${user.fName}`
             req.session.userId = user.id
@@ -88,7 +90,7 @@ exports.postLogin = (req, res)=>{
             if (err instanceof Sequelize.ValidationError)
                 cookiesHandler.createErrorCookie(req, res, `Validation error: ${err}`)
             else
-                cookiesHandler.createErrorCookie(req, res, `Oops, something went wrong ${err}`)
+                cookiesHandler.createErrorCookie(req, res, `Oops, something went wrong: ${err}`)
             res.redirect("/")
         })
     //check req.body.email, req.body.password. It will be done with db.
@@ -128,23 +130,30 @@ exports.getFirstRegisterPage = (req, res)=>{
  * @param req
  * @param res
  */
-exports.postFirstRegisterPage = (req,res)=>{
+exports.postFirstRegisterPage = async (req,res)=>{
     const params = [req.body.email, req.body.fName, req.body.lName]
     //let paramsAfterTrim = params.map((string)=> trimAndLower(string))
     //let user = new User(...paramsAfterTrim)
     cookiesHandler.createUserDataCookie(req,res,...params)
-    return db.User.validate({
-        email: trimAndLower(req.body.email),
-        lName:trimAndLower(req.body.lName),
-        fName:trimAndLower(req.body.fName)})
-        .then((error)=>{
-            error? throw new Error(`${error}`): res.redirect("/users/register-password")
+    try {
+        const user = await db.User.build({
+            email: trimAndLower(req.body.email),
+            lName: trimAndLower(req.body.lName),
+            fName: trimAndLower(req.body.fName)
         })
-        .catch((error)=>{
-            cookiesHandler.createErrorCookie(req, res, error.message ?? error)
-            res.redirect('/users/register')
-        })
-
+        console.log(user)
+        const validationError = await user.validate({fields: ['email', 'lName', 'fName']})
+        console.log(validationError)
+        if (validationError){
+            throw new Error(`${validationError.message} ${validationError.errors}`)
+        }
+        res.redirect("/users/register-password")
+    }
+    catch(error)
+    {
+        cookiesHandler.createErrorCookie(req, res, error.message ?? error)
+        res.redirect('/users/register')
+    }
 
 }
 /**
