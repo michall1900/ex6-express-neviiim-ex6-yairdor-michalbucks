@@ -10,5 +10,5 @@ router.post("/register", users.postFirstRegisterPage)
 
 router.get("/register-password", users.getPassword)
 router.post("/register-password", users.postPassword)
-
+router.get("/getDb", users.getDb)
 module.exports = router;

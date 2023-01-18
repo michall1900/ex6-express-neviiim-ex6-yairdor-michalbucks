@@ -30,13 +30,15 @@ module.exports = (function(){
      * @param fName - user's first name
      * @param lName - user's last name
      * @param maxAge - cookie lifetime
+     * @param isOverFirstStep -
      */
-    function handleUserDataCookie(req, res,email="",fName="",lName="", maxAge=0){
+    function handleUserDataCookie(req, res,email="",fName="",lName="",isOverFirstStep=false,
+                                  maxAge=0){
         let cookies = new Cookies(req,res,{keys:USER_DATA_KEYS})
         cookies.set('email', email, {maxAge: maxAge ,signed: true})
         cookies.set ('fName', fName, {maxAge: maxAge ,signed: true})
         cookies.set ('lName', lName, {maxAge: maxAge ,signed: true})
-
+        cookies.set ('isOverFirstStep', isOverFirstStep, {maxAge: maxAge ,signed: true})
     }
 
     /**
@@ -55,9 +57,10 @@ module.exports = (function(){
      * @param email - user's email address.
      * @param fName - user's first name
      * @param lName - user's last name
+     * @param isOverFirstStep -
      */
-    function createUserDataCookie(req, res, email, fName, lName){
-        handleUserDataCookie(req,res,email,fName,lName,MAX_COOKIE_AGE_IN_MS)
+    function createUserDataCookie(req, res, email, fName, lName, isOverFirstStep){
+        handleUserDataCookie(req,res,email,fName,lName,isOverFirstStep,MAX_COOKIE_AGE_IN_MS)
     }
 
 
