@@ -1,3 +1,5 @@
+
+
 module.exports = class Database{
     #data;
     constructor() {
@@ -74,6 +76,7 @@ module.exports = class Database{
      * @returns {boolean} If the image exits at the database.
      */
     imageIsExist(image){
+        console.log("80 is image , image:", image);
         return image in this.#data;
     }
 }

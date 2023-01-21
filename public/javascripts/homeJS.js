@@ -11,9 +11,11 @@
     //----------------------------------- listeners initial's definition ----------------------------------------------
 
     document.addEventListener("DOMContentLoaded", () => {
-        console.log("finished loading!")
         document.getElementById("dateForm").addEventListener("submit", function(event){
             getData(event);
+        })
+        document.getElementById("show-more-button").addEventListener("click", function (){
+            fetchData(currStartDate, NASA_API_URL, false);
         })
     });
 
@@ -26,7 +28,6 @@
         event.preventDefault();
         let theurl = event.target.action;
         let getDate = document.getElementById("pictureDate").value;
-        console.log("30");
         fetchData(getDate, theurl);
     }
 
@@ -43,12 +44,11 @@
         const newStartDate = new Date(start);
         newStartDate.setDate(newStartDate.getDate() - 1);
         currStartDate = newStartDate.toISOString().substring(0,10);
-        console.log("47");
         fetch(`${url}?api_key=${APIKEY}&start_date=${start}&end_date=${end}`)
             .then(function(response) {
                 return response.json();
             }).then(function (data) {
-            fetch(`/home/api?images=[${getPicsUrls(data).toString()}]`)
+            fetch(`/home/api?images=[${getPicsDates(data).toString()}]`)
                 .then(function (comments) {
                     return comments.json();
                 }).then(function (comments){
@@ -58,7 +58,7 @@
                 }
                 content.innerHTML = "";
                 data.forEach(function(item){
-                    IMAGES.push(new Image(item, comments[item.url]));
+                    IMAGES.push(new Image(item, comments[item.date]));
                 });
                 IMAGES.sort((a,b)=>{
                     return b.getDate().toString().localeCompare(a.getDate().toString());
@@ -66,9 +66,10 @@
                 IMAGES.forEach(function (image){
                     content.appendChild(image.getHtml());
                 })
-                //showAndHide("show-more-button", "show");
+                showAndHide("show-more-button", "show");
             })
         }).catch(error =>{
+            showAndHide("show-more-button", "hide");
             console.log("ERRORRRRRRR");
         });
     }
@@ -101,12 +102,12 @@
     /**
      * The function gets from the NASA response the pictures urls.
      * @param data The NASA response.
-     * @returns {*[]} A list of the pictures URLs.
+     * @returns {*[]} A list of the pictures Dates.
      */
-    function getPicsUrls(data){
+    function getPicsDates(data){
         let pics = [];
         data.forEach(function(pic){
-            pics.push(`"${pic.url}"`);
+            pics.push(`"${pic.date}"`);
         });
         return pics;
     }
@@ -127,7 +128,7 @@
         #data
         #comments
         #displayComments
-        constructor(item, comments) {
+        constructor(item, comments = []) {
             this.#lastUpdate = 0
             this.#date = item.date;
             this.#data = item;
@@ -142,7 +143,7 @@
         getHtml(){
             let ans = document.createElement('li');
             ans.className = "list-group-item";
-            ans.id = `${this.#data.url}-post`;
+            ans.id = `${this.#data.date}-post`;
             ans.appendChild(this.#generateHtml());
             return ans;
         }
@@ -217,11 +218,11 @@
             commentButton.style = "max-width: 25%";
             commentButton.className = "comment-button btn btn-primary"
             commentButton.innerText = 'Comment';
-            commentButton.id = `${this.#data.url}-comment_button`;
+            commentButton.id = `${this.#data.date}-comment_button`;
             commentButton.addEventListener("click", (event)=>{
 
-                showAndHide(`${this.#data.url}-comment_button`, "hide");
-                showAndHide(`${this.#data.url}-div`, "toggle");
+                showAndHide(`${this.#data.date}-comment_button`, "hide");
+                showAndHide(`${this.#data.date}-div`, "toggle");
             });
             li.appendChild(commentButton);
             return li;
@@ -238,14 +239,13 @@
             button.className ="input-group-text send-comment-button btn btn-primary";
             button.innerText = "Send Comment";
             button.addEventListener("click", (event)=> {
-                if (sendCommentValid(`${this.#data.url}-text-area`)) {
+                if (sendCommentValid(`${this.#data.date}-text-area`)) {
                     fetch("/home/api", {
                         method: "POST",
                         headers: {"Content-Type": "application/json"},
                         body: JSON.stringify({
-                            "image": this.#data.url,
-                            "comment": document.getElementById(`${this.#data.url}-text-area`).value,
-                            "user": USERNAME
+                            "picDate": this.#data.date,
+                            "content": document.getElementById(`${this.#data.date}-text-area`).value
                         })
                     }).then((res)=>{
                         this.updateComments();
@@ -263,12 +263,12 @@
             let div = document.createElement('div');
             let textArea = document.createElement("textarea");
             div.className = "input-group";
-            div.id = `${this.#data.url}-div`;
+            div.id = `${this.#data.date}-div`;
             div.style = "display: none";
             textArea.className = "col-12";
             textArea.ariaLabel= "With textarea";
             textArea.maxLength = "128";
-            textArea.id = `${this.#data.url}-text-area`;
+            textArea.id = `${this.#data.date}-text-area`;
             div.appendChild(textArea);
             div.appendChild(this.#getSendCommentButton());
             return div;
@@ -281,7 +281,7 @@
         #getShowComments(){
             let showComments = document.createElement("button");
             showComments.innerText = "Show Comments";
-            showComments.id = `${this.#data.url}-show`;
+            showComments.id = `${this.#data.date}-show`;
             showComments.className = 'btn btn-primary col-12';
             showComments.addEventListener("click", (event)=>{
                 this.#displayComments = !this.#displayComments;
@@ -299,7 +299,7 @@
         #getComments(){
             let comments = document.createElement('ol');
             comments.className = "list-group col-12";
-            comments.id = `${this.#data.url}-show-comments`;
+            comments.id = `${this.#data.date}-show-comments`;
             comments.style.display = this.#displayComments ? "block" : "none";
             for (const [key, value] of Object.entries(this.#comments)){
                 let li = document.createElement('li');
@@ -330,15 +330,13 @@
             let button = document.createElement('button');
             button.className = "btn btn-primary delete-comment";
             button.innerText = "Delete";
-            button.id = `${this.#data.url}-${id}-del-button`;
+            button.id = `${this.#data.date}-${id}-del-button`;
             button.addEventListener("click", (event)=>{
                 fetch("/home/api", {
                     method: "DELETE",
                     headers: {"Content-Type": "application/json"},
                     body: JSON.stringify({
-                        "image": this.#data.url,
-                        "id": id,
-                        "user": USERNAME
+                        "id": id
                     })
                 }).then((event)=>{
                     this.updateComments();
@@ -352,13 +350,13 @@
          * This function updates the feed so the user will see the last updates
          */
         updateComments(){
-            fetch(`/home/api?images=["${this.#data.url}"]`)
+            fetch(`/home/api?images=["${this.#data.date}"]`)
                 .then((response)=>{
                     return response.json();
                 }).then((comments)=>{
-                this.#comments = comments[this.#data.url];
-                document.getElementById(`${this.#data.url}-post`).innerHTML = "";
-                document.getElementById(`${this.#data.url}-post`).appendChild(this.#generateHtml());
+                this.#comments = comments[this.#data.date];
+                document.getElementById(`${this.#data.date}-post`).innerHTML = "";
+                document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
                 this.#lastUpdate = Date.now();
             });
         }
