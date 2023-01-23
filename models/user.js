@@ -62,19 +62,26 @@ module.exports = (sequelize, DataTypes) => {
         max:{
           args:[32],
           msg:`Invalid password 1. ${constants.MAX_LENGTH_ERR}`
+        },
+        isMatchingPasswords: function(value){
+          //Checking if passwordConfirm defined to let validation work while login.
+          if(this.passwordConfirm && this.passwordConfirm !== value)
+            throw new Error(constants.INVALID_PASSWORD_ERR)
         }
       }
     },
     passwordConfirm: {
       type: DataTypes.VIRTUAL,
+      allowNull: false,
       validate: {
         notEmpty: {msg: `${constants.EMPTY_ERR} confirm password.`},
+        notNull: {msg: `${constants.EMPTY_ERR} confirm password.`},
         max:{
           args:[32],
           msg:`Invalid confirm password. ${constants.MAX_LENGTH_ERR}`
         },
         isString: (value)=>{
-          if(!value.isString() || typeof value !== 'string' || this.password !== value)
+          if(!value instanceof String || typeof value !== 'string')
             throw new Error(constants.INVALID_PASSWORD_ERR)
         }
       }

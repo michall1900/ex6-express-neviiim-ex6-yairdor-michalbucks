@@ -226,7 +226,7 @@ exports.postPassword = async (req,res)=>{
                 lName: utilities.trimAndLower(req.data.userDataParams[USER_PARAMS_INDEX.lName]),
                 fName: utilities.trimAndLower(req.data.userDataParams[USER_PARAMS_INDEX.fName]),
                 password: req.body.password1,
-                confirmPassword: req.body.password2
+                passwordConfirm: req.body.password2
             })
             cookiesHandler.createErrorCookie(req, res, cookiesHandler.REGISTER_SUCCESS)
             cookiesHandler.clearUserDataCookie(req, res)

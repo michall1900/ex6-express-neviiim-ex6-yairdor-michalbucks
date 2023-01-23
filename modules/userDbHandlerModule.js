@@ -4,8 +4,8 @@ const Sequelize = require("sequelize");
 const cookiesHandler = require("./cookiesHandler");
 
 const userDbHandlerModule = (function(){
-    const isEmailNotExistCheck = async (email)=>{
 
+    const isEmailNotExistCheck = async (email)=>{
         const user = await db.User.findOne({where:{email: email}})
         if (user)
             throw new Error (constants.EMAIL_EXIST_ERR)

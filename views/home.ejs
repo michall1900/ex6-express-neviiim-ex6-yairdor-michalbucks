@@ -1,22 +1,26 @@
 <%- include('includes/head.ejs')%>
-<div class="container-fluid ">
+<div class="container">
+    <div class="row align-items-center">
+        <img class="col-1 img-fluid fw-bold" src="./images/NASA-Logo-Large.png" alt="">
+        <div class="col">Created by <cite title="Source Title">Yair Dor and Michal Bucks</cite></div>
+    </div>
     <div class="row">
         <div class="col-12">
             <figure class="text-center">
                 <h1 class="display-1">NASA Social Network</h1>
-                <figcaption class="h3">Created by <cite title="Source Title">Yair Dor and Michal Bucks</cite></figcaption>
+                <figcaption class="h3">Hello: <cite title="Source Title"><%username%></cite></figcaption>
             </figure>
         </div>
     </div>
     <div class="row text-center" id = "afterLogin">
         <div class="col-12" id ="welcome"></div>
-        <form action="https://api.nasa.gov/planetary/apod" id="dateForm">
+        <form action="https://api.nasa.gov/planetary/apod" id="dateForm" class="col-12">
             <label class="h5 col" for="pictureDate">Please choose a picture date:</label>
             <input class = "col" type="date" id="pictureDate" name="pictureDate">
             <button class="btn btn-primary mt-2 col" type="submit">Send</button>
         </form>
         <ol id="content-list" class="list-group"></ol>
-        <button id="show-more-button" style="display: none">Show More</button>
+        <button id="show-more-button" class="col-12 my-2" style="display: none">Show More</button>
     </div>
 </div>
 

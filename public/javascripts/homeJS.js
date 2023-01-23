@@ -203,10 +203,11 @@
          * @returns {HTMLImageElement}
          */
         #getImage(){
-            let ans = document.createElement("img");
-            if (this.#data.media_type === "video"){
-                ans = document.createElement("iframe");
-            }
+            let ans = document.createElement(`${(this.#data.media_type === "video") ? "video": "img"}`)
+            // let ans = document.createElement("img");
+            // if (this.#data.media_type === "video"){
+            //     ans = document.createElement("iframe");
+            // }
             ans.src = this.#data.url;
             ans.alt = "";
             ans.className = "img-fluid col-6";
@@ -219,9 +220,20 @@
          * @returns {HTMLParagraphElement}
          */
         #getInfo(){
-            let ans = document.createElement("p");
-            ans.className = "col-6";
-            ans.innerText = `Copyright: ${this.#data.copyright}\nDate: ${this.#data.date}\nExplanation: ${this.#data.explanation}\n`;
+            let ans = document.createElement("div");
+            ans.className = "col";
+            let row = document.createElement("div");
+            row.className = "row"
+            let firstCol = document.createElement("div")
+            firstCol.className = "col-12"
+            firstCol.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"} Date: ${this.#data.date}`
+            let secondCol = document.createElement("div")
+            secondCol.className = "col-12"
+            secondCol.innerText = `Explanation: ${this.#data.explanation ?? ""}`
+            //ans.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"}\nDate: ${this.#data.date}\nExplanation: ${this.#data.explanation}\n`;
+            row.appendChild(firstCol)
+            row.appendChild(secondCol)
+            ans.appendChild(row)
             return ans;
         }
 
@@ -300,7 +312,7 @@
             let showComments = document.createElement("button");
             showComments.innerText = "Show Comments";
             showComments.id = `${this.#data.date}-show`;
-            showComments.className = 'btn btn-primary col-12';
+            showComments.className = 'btn btn-primary col-12 my-2';
             showComments.addEventListener("click", (event)=>{
                 this.#displayComments = !this.#displayComments;
                 showAndHide(`${event.target.id}-comments`, "toggle");
