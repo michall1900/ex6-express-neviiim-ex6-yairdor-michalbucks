@@ -9,13 +9,14 @@ module.exports = (function(){
     const REGISTER_SUCCESS = "Registration successful, you can now login"
     const USER_DATA_KEYS = ['email', 'fName','lName']
     const EXPIRED_USER_COOKIE = "Registration process expired, please start again"
+    const INVALID_ACCESS = "You should complete first this page."
     const MAX_COOKIE_AGE_IN_MS = 30000
 
     /**
      * This function is creating the error cookie. It sets the error message inside the cookie.
      * @param req
      * @param res
-     * @param errorMessage - The wanted error to disapl.
+     * @param errorMessage - The wanted error to display.
      */
     function createErrorCookie(req, res, errorMessage){
         let cookies = new Cookies(req,res);
@@ -30,13 +31,15 @@ module.exports = (function(){
      * @param fName - user's first name
      * @param lName - user's last name
      * @param maxAge - cookie lifetime
+     * @param isOverFirstStep -
      */
-    function handleUserDataCookie(req, res,email="",fName="",lName="", maxAge=0){
+    function handleUserDataCookie(req, res,email="",fName="",lName="",isOverFirstStep=false,
+                                  maxAge=0){
         let cookies = new Cookies(req,res,{keys:USER_DATA_KEYS})
         cookies.set('email', email, {maxAge: maxAge ,signed: true})
         cookies.set ('fName', fName, {maxAge: maxAge ,signed: true})
         cookies.set ('lName', lName, {maxAge: maxAge ,signed: true})
-
+        cookies.set ('isOverFirstStep', isOverFirstStep, {maxAge: maxAge ,signed: true})
     }
 
     /**
@@ -55,9 +58,10 @@ module.exports = (function(){
      * @param email - user's email address.
      * @param fName - user's first name
      * @param lName - user's last name
+     * @param isOverFirstStep -
      */
-    function createUserDataCookie(req, res, email, fName, lName){
-        handleUserDataCookie(req,res,email,fName,lName,MAX_COOKIE_AGE_IN_MS)
+    function createUserDataCookie(req, res, email, fName, lName, isOverFirstStep){
+        handleUserDataCookie(req,res,email,fName,lName,isOverFirstStep,MAX_COOKIE_AGE_IN_MS)
     }
 
 
@@ -66,6 +70,7 @@ module.exports = (function(){
         REGISTER_SUCCESS,
         USER_DATA_KEYS,
         EXPIRED_USER_COOKIE,
+        INVALID_ACCESS,
         createErrorCookie,
         createUserDataCookie,
         clearUserDataCookie

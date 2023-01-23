@@ -14,11 +14,13 @@ router.use(error.getErrorCookie)
 
 router.use((req,res,next)=>{
     const isLogin = !!(req.session && req.session.isLogin)
-    const isTryingToGetAfterLoginPage = req.url.includes("/home")
-    if (isLogin === isTryingToGetAfterLoginPage)
+    const isTryingToGetHome = req.url.includes("/home")
+    if (isLogin === isTryingToGetHome)
         next()
-    else if (isLogin && !isTryingToGetAfterLoginPage)
+    else if (isLogin && !isTryingToGetHome) {
+        //should return json or something like that
         res.redirect('/home')
+    }
     else
         res.redirect('/')
 })

@@ -5,7 +5,7 @@ class User {
     INVALID_FIELD_ERR = 'User must have valid email address, first name, last name and password.'
     USER_EXIST_ERR =  'This email is already in use, please choose another one'
     INVALID_PASSWORD_ERR = "The password is invalid. Make sure that the first one is the same as the " +
-        "second and none of them is empty"
+        "second and none of them are empty"
 
     constructor(emailAdd, fName,lName, password1, password2) {
         this.emailAdd=emailAdd

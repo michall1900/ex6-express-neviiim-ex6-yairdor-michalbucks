@@ -3,7 +3,10 @@
         <img src="/images/NASA-Logo-Large.png" alt="" class="image-fluid col-4">
         <h3 class="col-12"><%= pageTitle %></h3>
         <h5 class="col-12"><%= subTitle %></h5>
-        <h6 class="col-12 text-danger" id="errorMsg"><%if (error){%><%=error%><%}%></h6>
-
     </div>
-
+    <%if (error){%>
+        <div class = "row">
+            <h6 class="col-6 text-danger me-auto offset-3 ">Some errors occurred:</h6>
+            <h6 class="col-6 text-danger me-auto offset-3" id="errorMsg"><%-error%></h6>
+        </div>
+    <%}%>

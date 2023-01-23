@@ -1,3 +1,7 @@
+// Note: this module will be move to somewhere else for client's needs.
+
+
+
 const validationModule = (function(){
     const isValidEmailTemplate = (email) =>{
         let re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
