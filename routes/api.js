@@ -41,6 +41,7 @@ router.post('/', function(req, res, next) {
     return db.Comments.create({picDate, username, userid, content,creationDate})
         .then((comment) => res.send(comment))
         .catch((err) => {
+            console.log(err)
             //ERROR
         })
     // if(validateNewComment(req,res)) {

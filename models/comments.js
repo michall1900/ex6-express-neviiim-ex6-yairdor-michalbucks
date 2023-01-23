@@ -22,7 +22,7 @@ module.exports = (sequelize, DataTypes) => {
     username: {type: DataTypes.STRING,
       validate: {
         notEmpty: true,
-        is: /^[a-zA-Z0-9]{1,24}$/i
+        is: /^[a-zA-Z]{3,32} [a-zA-Z]{3,32}$/i
     }},
     userid: {type: DataTypes.STRING,
       validate: {
