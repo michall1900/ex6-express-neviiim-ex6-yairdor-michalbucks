@@ -18,6 +18,7 @@ app.set('views', path.join(__dirname, 'views'));
 
 
 const loginRoutes = require('./routes/login');
+const apiRoutes = require('./routes/api');
 const registerRoutes = require('./routes/register');
 const forAllRoutes = require('./routes/forAll');
 const homeRoute = require('./routes/home');
@@ -43,10 +44,11 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-app.use(forAllRoutes)
+app.use(forAllRoutes);
 app.use(loginRoutes);
 app.use('/users', registerRoutes);
 app.use('/home', homeRoute);
+app.use('/home/api', apiRoutes);
 
 
 //app.use(errorController.get404)
