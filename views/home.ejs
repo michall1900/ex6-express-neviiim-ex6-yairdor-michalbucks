@@ -5,12 +5,11 @@
         <div class="col">Created by <cite title="Source Title">Yair Dor and Michal Bucks</cite></div>
     </div>
     <div class="row">
-        <div class="col-12">
-            <figure class="text-center">
-                <h1 class="display-1">NASA Social Network</h1>
-                <figcaption class="h3">Hello: <cite title="Source Title"><%username%></cite></figcaption>
-            </figure>
-        </div>
+        <h1 class="col-12 text-center">NASA Social Network</h1>
+        <div class="col-12 text-center h3 title-text">Hello<%if(username){ %> <%-username-%><%}%></div>
+        <form class="col-12 text-center" action="/home/logout">
+            <button class="btn btn-danger" type="submit">Logout</button>
+        </form>
     </div>
     <div class="row text-center" id = "afterLogin">
         <div class="col-12" id ="welcome"></div>

@@ -18,7 +18,11 @@ const utilitiesModule = (function(){
         return (isString(string))? string.trim().toLowerCase(): string
     }
 
-    return {trimAndLower,isString}
+    const stringToTitle = (string) =>{
+        return (isString(string))? string.split(" ").map((str)=>str.charAt(0).toUpperCase() +str.slice(1)).join(" ") : string
+    }
+
+    return {trimAndLower,isString, stringToTitle}
 })();
 
 module.exports = utilitiesModule
