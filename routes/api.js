@@ -1,40 +1,75 @@
 const express = require('express');
 const router = express.Router();
-
+const Sequelize = require('sequelize');
 const API = require('../modules/apiMoudle');
 const api = new API();
-
+const db = require('../models');
 let TIMESTAMP = Date.now();
 
 /**
  * The rout receives a get request which contains an images array and returns a json of each image's comments.
  */
 router.get('/', function(req, res, next) {
-    if(validateGetRequest(req,res))
-        res.json(api.getContent(JSON.parse(req.query.images)));
-    res.end();
+    // Validate request!
+    let dataArray = JSON.parse(req.query.images);
+    //let timeStamp = dataArray.pop();
+    return db.Comments.findAll({attributes: { exclude: ['userid'] },
+        where :{
+         picDate :{
+             [Sequelize.Op.or]: dataArray
+         }
+    }}).then((comms) => {
+        res.send(comms)
+    })
+        .catch((err) =>{
+            return res.send(err);
+        })
+    // if(validateGetRequest(req,res))
+    //     res.json(api.getContent(JSON.parse(req.query.images)));
+    // res.end();
 });
 
 /**
  * The route posting a comment on the received image by the received username.
  */
 router.post('/', function(req, res, next) {
-    if(validateNewComment(req,res)) {
-        api.add(req.body.image, req.body.user, req.body.comment);
-        updateTimeStamp();
-    }
-    res.end();
+    const {picDate, content} = req.body;
+    let creationDate = new Date();
+    let username = req.session.username;
+    let userid = req.session.userId;
+    // get username + userid  + validate all data
+    return db.Comments.create({picDate, username, userid, content,creationDate})
+        .then((comment) => res.send(comment))
+        .catch((err) => {
+            //ERROR
+        })
+    // if(validateNewComment(req,res)) {
+    //     api.add(req.body.picDate, req.body.username, req.body.content);
+    //     updateTimeStamp();
+    // }
+    // res.end();
 });
 
 /**
  * The route deletes an image's comment if possible.
  */
 router.delete('/', function(req, res, next) {
-    if(validateDeleteRequest(req, res)){
-        api.del(req.body.image, req.body.id);
-        updateTimeStamp();
-    }
-    res.end();
+    const index = parseInt(req.query.id);
+    let userid = req.session.userId;
+    // validate that I can delete this comment -> the same user
+    return db.Comments.findOne({where:{id:index}})
+        .then((comment) => comment.destroy({force: true}))
+        .then(() => res.send({index}))
+        .catch((err) => {
+            console.log("ERRRRRRRRRRRORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR");
+            //ERROR
+        })
+
+    // if(validateDeleteRequest(req, res)){
+    //     api.del(req.body.picDate, req.body.id);
+    //     updateTimeStamp();
+    // }
+    // res.end();
 });
 
 /**
@@ -72,13 +107,13 @@ function validateGetRequest(req, res){
  */
 function validateDeleteRequest(req,res){
     if(validateBodyExistence(req,res)){
-        if(req.body.image === undefined || req.body.user === undefined || req.body.id === undefined) {
+        if(req.body.picDate === undefined || req.body.id === undefined) {
             res.statusMessage = "required parameters are missing, The required parameters are image (url), username (string) " +
                 "and comment (string)";
             res.status(400);
             return false;
         }
-        if(!api.deleteIsLegal(req.body.image, req.body.id, req.body.user)) {
+        if(!api.deleteIsLegal(req.body.picDate, req.body.id, req.body.username)) {
             res.statusMessage = "Illegal deletion request!";
             res.status(400);
             return false;
@@ -97,7 +132,7 @@ function validateDeleteRequest(req,res){
  */
 function validateNewComment(req, res, api){
     if(validateBodyExistence(req, res)){
-        if(req.body.image === undefined || req.body.user === undefined || req.body.comment === undefined){
+        if(req.body.picDate === undefined || req.body.username === undefined || req.body.content === undefined){
             res.status(400);
             res.send("required parameters are missing, The required parameters are image (url), username (string) and comment (string)");
             return false;
@@ -132,7 +167,7 @@ function validateBodyExistence(req, res){
  * @param res The response.
  */
 function validateImageExistence(req, res){
-    if(!api.imageIsExist(req.body.image)){
+    if(!api.imageIsExist(req.body.picDate)){
         res.status(400);
         res.send("image is not exists!");
         return false;
