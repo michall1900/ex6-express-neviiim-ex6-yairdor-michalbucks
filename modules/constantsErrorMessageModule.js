@@ -1,4 +1,4 @@
-const constantsModule= (function(){
+const constantsErrorMessageModule= (function(){
     const EMAIL_EXIST_ERR = "Can't register, email in use."
     const EMPTY_ERR = "Error, you must enter "
     const MAX_LENGTH_ERR = "Please make sure your input is in maximum length of 32."
@@ -8,10 +8,12 @@ const constantsModule= (function(){
     const INVALID_PASSWORD_ERR = "One of the passwords are invalid. Make sure that the first one is the same as the " +
         "second."
 
+    const LOGIN_ERR = "User doesn't exist or you entered invalid email/ password"
+    const SOMETHING_WENT_WRONG = "Oops, something went wrong..."
     return {
         EMAIL_EXIST_ERR, EMPTY_ERR, MIN_AND_MAX_LENGTH_ERR, MAX_LENGTH_ERR, NO_ALPHA_ERR,EMAIL_ERR,
-        INVALID_PASSWORD_ERR
+        INVALID_PASSWORD_ERR, LOGIN_ERR, SOMETHING_WENT_WRONG
     }
 })();
 
-module.exports = constantsModule
+module.exports = constantsErrorMessageModule

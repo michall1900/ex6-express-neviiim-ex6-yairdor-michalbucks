@@ -1,5 +1,5 @@
 'use strict';
-const constants = require("../modules/constantsModule.js");
+const constants = require("../modules/constantsErrorMessageModule.js");
 
 /** @type {import('sequelize-cli').Migration} */
 
@@ -48,7 +48,7 @@ module.exports = {
 };
 
 'use strict';
-const constants = require("../modules/constantsModule.js");
+const constants = require("../modules/constantsErrorMessageModule.js");
 
 const {
   Model

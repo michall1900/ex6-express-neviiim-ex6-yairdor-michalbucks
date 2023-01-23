@@ -9,13 +9,14 @@ module.exports = (function(){
     const REGISTER_SUCCESS = "Registration successful, you can now login"
     const USER_DATA_KEYS = ['email', 'fName','lName']
     const EXPIRED_USER_COOKIE = "Registration process expired, please start again"
+    const INVALID_ACCESS = "You should complete first this page."
     const MAX_COOKIE_AGE_IN_MS = 30000
 
     /**
      * This function is creating the error cookie. It sets the error message inside the cookie.
      * @param req
      * @param res
-     * @param errorMessage - The wanted error to disapl.
+     * @param errorMessage - The wanted error to display.
      */
     function createErrorCookie(req, res, errorMessage){
         let cookies = new Cookies(req,res);
@@ -69,6 +70,7 @@ module.exports = (function(){
         REGISTER_SUCCESS,
         USER_DATA_KEYS,
         EXPIRED_USER_COOKIE,
+        INVALID_ACCESS,
         createErrorCookie,
         createUserDataCookie,
         clearUserDataCookie
