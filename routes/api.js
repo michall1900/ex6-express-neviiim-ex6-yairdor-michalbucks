@@ -12,12 +12,15 @@ let TIMESTAMP = Date.now();
 router.get('/', function(req, res, next) {
     // Validate request!
     let dataArray = JSON.parse(req.query.images);
-    let timeStamp = dataArray.pop();
-    return db.Comments.findAll({where :{
+    //let timeStamp = dataArray.pop();
+    return db.Comments.findAll({attributes: { exclude: ['userid'] },
+        where :{
          picDate :{
              [Sequelize.Op.or]: dataArray
          }
-    }}).then((comms) => res.send(comms))
+    }}).then((comms) => {
+        res.send(comms)
+    })
         .catch((err) =>{
             return res.send(err);
         })
@@ -51,13 +54,14 @@ router.post('/', function(req, res, next) {
  * The route deletes an image's comment if possible.
  */
 router.delete('/', function(req, res, next) {
-    const id = parseInt(req.params.id);
+    const index = parseInt(req.query.id);
     let userid = req.session.userId;
     // validate that I can delete this comment -> the same user
-    return db.Comments.findById(id)
+    return db.Comments.findOne({where:{id:index}})
         .then((comment) => comment.destroy({force: true}))
-        .then(() => res.send({ id }))
+        .then(() => res.send({index}))
         .catch((err) => {
+            console.log("ERRRRRRRRRRRORRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR");
             //ERROR
         })
 
@@ -74,21 +78,6 @@ router.delete('/', function(req, res, next) {
 router.get('/timeStamp', (req, res) =>{
     res.json({"value": TIMESTAMP.toString()});
 });
-
-
-/**
- *
- */
-function parseReq(req){
-    // let dataArray = [];
-    // for(const [index, name] of Object.entries(req)){
-    //     if(this.#data[name] === undefined){
-    //         this.#data[name] = {};
-    //     }
-    //     ans[name] = this.#data[name];
-    // }
-    return [["test", "test2", "test3"] ,3];
-}
 
 /**
  * The function validates that the received get request is in the right syntax needed to the request to function.

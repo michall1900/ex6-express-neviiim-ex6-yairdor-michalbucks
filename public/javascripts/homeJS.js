@@ -52,13 +52,15 @@
                 .then(function (comments) {
                     return comments.json();
                 }).then(function (comments){
+                    console.log(comments);
                 let content = document.getElementById("content-list");
                 if(newPage) {
                     IMAGES = [];
                 }
                 content.innerHTML = "";
                 data.forEach(function(item){
-                    IMAGES.push(new Image(item, comments[item.date]));
+                    console.log("here");
+                    IMAGES.push(new Image(item, getImageComments(comments, item.date)));
                 });
                 IMAGES.sort((a,b)=>{
                     return b.getDate().toString().localeCompare(a.getDate().toString());
@@ -72,6 +74,19 @@
             showAndHide("show-more-button", "hide");
             console.log("ERRORRRRRRR");
         });
+    }
+
+    /**
+     *
+     */
+    function getImageComments(comments, date){
+        let imageComments = [];
+        comments.forEach(function(comment){
+            if (comment.picDate === date){
+                imageComments.push(comment);
+            }
+        })
+        return imageComments;
     }
 
     /**
@@ -301,21 +316,20 @@
             comments.className = "list-group col-12";
             comments.id = `${this.#data.date}-show-comments`;
             comments.style.display = this.#displayComments ? "block" : "none";
-            for (const [key, value] of Object.entries(this.#comments)){
+            const imagePointer = this;
+            imagePointer.#comments.forEach(function(val){
                 let li = document.createElement('li');
                 let username = document.createElement('p');
                 let content = document.createElement('p');
-
                 li.className = "list-group-item";
-                li.value = "${key}";
-                username.innerText = `Username: ${value[0]}`;
-                content.innerText = `${value[1]}`;
+                username.innerText = `Username: ${val.username}`;
+                content.innerText = `${val.content}`;
                 li.appendChild(username);
                 li.appendChild(content);
-                if(value[0] === USERNAME)
-                    li.appendChild(this.#getDelButton(key));
+                //if(val.username === USERNAME)
+                    li.appendChild(imagePointer.#getDelButton(val.id));
                 comments.appendChild(li);
-            }
+            })
             comments.appendChild(this.#getCommentButton());
             comments.appendChild(this.#getCommentTextField());
             return comments;
@@ -332,12 +346,10 @@
             button.innerText = "Delete";
             button.id = `${this.#data.date}-${id}-del-button`;
             button.addEventListener("click", (event)=>{
-                fetch("/home/api", {
-                    method: "DELETE",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({
-                        "id": id
-                    })
+                let params = new URLSearchParams();
+                params.append("id", id.toString())
+                fetch(`/home/api?${params.toString()}`, {
+                    method: "DELETE"
                 }).then((event)=>{
                     this.updateComments();
                 });
@@ -354,7 +366,7 @@
                 .then((response)=>{
                     return response.json();
                 }).then((comments)=>{
-                this.#comments = comments[this.#data.date];
+                this.#comments = comments;
                 document.getElementById(`${this.#data.date}-post`).innerHTML = "";
                 document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
                 this.#lastUpdate = Date.now();
