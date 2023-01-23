@@ -17,6 +17,9 @@
         document.getElementById("show-more-button").addEventListener("click", function (){
             fetchData(currStartDate, NASA_API_URL, false);
         })
+        let date =  document.getElementById("pictureDate");
+        let todaysDate = new Date();
+        date.value = todaysDate.toISOString().substring(0,10);
     });
 
 
