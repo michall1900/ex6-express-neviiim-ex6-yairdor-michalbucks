@@ -10,12 +10,18 @@
     const SPINNER_BACKGROUND_CLASS_NAME = "spinner-background"
     let SPINNER_BACKGROUND_ELEMENT;
     let SHOW_MORE_BUTTON_ELEMENT;
+    const MIN_OK_STATUS = 200;
+    const MAX_OK_STATUS = 300;
+    let MODAL_ERROR_MESSAGE_ELEMENT;
+    let MODAL_ERROR_BUTTON_ELEMENT;
 
     //----------------------------------- listeners initial's definition ----------------------------------------------
 
     document.addEventListener("DOMContentLoaded", () => {
         SPINNER_BACKGROUND_ELEMENT = document.getElementsByClassName(SPINNER_BACKGROUND_CLASS_NAME)[0]
         SHOW_MORE_BUTTON_ELEMENT = document.getElementById("show-more-button")
+        MODAL_ERROR_MESSAGE_ELEMENT = document.getElementById("errorMessage")
+        MODAL_ERROR_BUTTON_ELEMENT = document.getElementById("errorModalBtn")
         const nasaFormElement = document.getElementById("dateForm");
         nasaFormElement.addEventListener("submit", function(event){
             getData(event);
@@ -23,9 +29,13 @@
         SHOW_MORE_BUTTON_ELEMENT.addEventListener("click", function (){
             fetchData(currStartDate, NASA_API_URL, false);
         })
+
+        //Display current date.
         let date =  document.getElementById("pictureDate");
         let todaysDate = new Date();
         date.value = todaysDate.toISOString().substring(0,10);
+
+        //Ask for the first time the feed page without user involved.
         const event = new Event("submit", {bubbles: true, cancelable: true});
         nasaFormElement.dispatchEvent(event);
     });
@@ -40,6 +50,64 @@
         let theurl = event.target.action;
         let getDate = document.getElementById("pictureDate").value;
         fetchData(getDate, theurl);
+    }
+
+
+    /**
+     * The function is showing the error message to the user inside a modal.
+     * The assumption is the error argument is Error object.
+     * @param error - Error object.
+     */
+    function errorHandler(error){
+
+        if (typeof(error) === "string" || error instanceof String) {
+
+            const [status, errorMsg] = [...error.split(",")]
+            if (status === "301" || status === "302") {
+                //do redirect from client
+                return
+            }
+            else{
+                MODAL_ERROR_MESSAGE_ELEMENT.innerText = error
+            }
+        }
+        else{
+            MODAL_ERROR_MESSAGE_ELEMENT.innerText = error
+        }
+        // document.getElementById(ERROR_MESSAGE_SECTION_ID).innerHTML =
+        //     (error.message && error.message.includes("status"))?error.message: UNKNOWN_MESSAGE
+        MODAL_ERROR_BUTTON_ELEMENT.click()
+
+
+    }
+
+    /**
+     * The function is checking an error if there was status code < 200 or >=300.
+     * The assumption is the response is a response from server.
+     * @param response - A response object.
+     * @returns {Promise<never>|Promise<unknown>}
+     */
+    async function status(response) {
+        if (response.status >= MIN_OK_STATUS && response.status < MAX_OK_STATUS) {
+            return response
+        }
+        else {
+            return response.text().then(text =>{
+                throw new Error(`status: ${response.status} ,error: ${text}`)
+            })
+        }
+    }
+
+    async function fetchRequest (url, goodResHandler, message){
+        try{
+            let res = await fetch(url, message)
+            await status(res)
+            const data = await res.json()
+            goodResHandler(data)
+        }
+        catch(err) {
+            errorHandler(err)
+        }
     }
 
     /**
@@ -117,15 +185,6 @@
             });
             TIMEOUT = setTimeout(updateImages, 15000);
         });
-    }
-
-    /**
-     * This function gets an id of which we want to toggle the display for, and hide the current displayed element.
-     * @param divId The element id.
-     */
-    function changeShownDiv(divId) {
-        showAndHide(SHOWN_DIV, "hide");
-        showAndHide(divId, "show");
     }
 
 
@@ -253,7 +312,6 @@
             let li = document.createElement("li");
             li.className = "list-group-item";
             let commentButton = document.createElement('button');
-            //commentButton.style = "max-width: 25%";
             commentButton.className = "comment-button btn btn-primary"
             commentButton.innerText = 'Comment';
             commentButton.id = `${this.#data.date}-comment_button`;
