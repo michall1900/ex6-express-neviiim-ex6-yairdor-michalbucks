@@ -22,7 +22,7 @@ module.exports = {
        },
       email: {
         type: Sequelize.STRING,
-        unique: {args: true , msg: constants.EMAIL_EXIST_ERR},
+        unique:true,
         allowNull: {args: false, msg: `${constants.EMPTY_ERR} email.`}
 
       },

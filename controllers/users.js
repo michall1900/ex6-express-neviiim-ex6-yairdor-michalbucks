@@ -75,30 +75,6 @@ exports.postLogin = async (req, res)=>{
         dbHandler.errorHandler(req,res,err)
         res.redirect("/")
     }
-    // return db.User.findOne({where:{[Sequelize.Op.and]:[{email:req.body.email}, {password:req.body.password}]}})
-    //     .then((user) => {
-    //         if (!user)
-    //             throw "User not found."
-    //         req.session.isLogin = true
-    //         req.session.username = `${user.lName} ${user.fName}`
-    //         req.session.userId = user.id
-    //         res.redirect("/home")
-    //     })
-    //     .catch((err)=>{
-    //         console.log(`Error: ${err}`)
-    //         if (err instanceof Sequelize.ValidationError)
-    //             cookiesHandler.createErrorCookie(req, res, `Validation error: ${err}`)
-    //         else
-    //             cookiesHandler.createErrorCookie(req, res, `Oops, something went wrong: ${err}`)
-    //         res.redirect("/")
-    //     })
-    //check req.body.email, req.body.password. It will be done with db.
-    //if user in db and valid, redirect him to '/home/' + save in session that he is login.
-
-    //here I assume that user is valid (without check it)
-
-
-    //if user is not in db, render current page with error message (will be change)
 
 
 }
@@ -147,30 +123,6 @@ exports.postFirstRegisterPage = async (req,res)=>{
         cookiesHandler.createUserDataCookie(req,res,req.body.email, req.body.fName, req.body.lName, false)
         res.redirect('/users/register')
     }
-        // await isEmailNotExistCheck(user.email)
-        // user.validate({fields: ['email', 'lName', 'fName']})
-        //     .then (() =>{
-        //         cookiesHandler.createUserDataCookie(req,res,req.body.email, req.body.fName, req.body.lName, true)
-        //         res.redirect("/users/register-password")
-        //     })
-        //     .catch((err)=>{
-        //         cookiesHandler.createUserDataCookie(req,res,req.body.email, req.body.fName, req.body.lName, false)
-        //         if (err instanceof Sequelize.ValidationError) {
-        //             let errorString = ""
-        //             err.message.split('\n').forEach((elem)=>errorString +=`<li>${elem}</li>`)
-        //             console.log(errorString)
-        //             let error= `<ul>${errorString}</ul>`
-        //             cookiesHandler.createErrorCookie(req, res, error)
-        //         }
-        //         else
-        //             cookiesHandler.createErrorCookie(req, res, `Oops, something went wrong... ${err}`)
-        //         res.redirect('/users/register')
-        //     })}
-    // catch (err){
-    //     cookiesHandler.createUserDataCookie(req,res,req.body.email, req.body.fName, req.body.lName, false)
-    //     cookiesHandler.createErrorCookie(req, res, `Oops, something went wrong... ${err.message}`)
-    //     res.redirect('/users/register')
-    // }
 
 }
 /**
@@ -220,7 +172,7 @@ exports.postPassword = async (req,res)=>{
     }
 
     else {
-        try{
+        try {
             await db.User.create({
                 email: utilities.trimAndLower(req.data.userDataParams[USER_PARAMS_INDEX.email]),
                 lName: utilities.trimAndLower(req.data.userDataParams[USER_PARAMS_INDEX.lName]),
@@ -231,56 +183,16 @@ exports.postPassword = async (req,res)=>{
             cookiesHandler.createErrorCookie(req, res, cookiesHandler.REGISTER_SUCCESS)
             cookiesHandler.clearUserDataCookie(req, res)
             res.redirect("/")
-        }
-        catch(err){
+        } catch (err) {
             dbHandler.errorHandler(req, res, err)
             if (err.message && err.message.includes("password"))
                 res.redirect('/users/register-password')
             else
                 res.redirect('/users/register')
         }
+    }
 
-        // catch (err){
-        //     cookiesHandler.createErrorCookie(req, res, `Oops, something went wrong...${err.message}`)
-        //     res.redirect('/users/register-password')
-        // }
-
-    //     try{
-    //         const user = db.User.create({
-    //             email: trimAndLower(req.data.userDataParams[USER_PARAMS_INDEX.email]),
-    //             lName: trimAndLower(req.data.userDataParams[USER_PARAMS_INDEX.lName]),
-    //             fName: trimAndLower(req.data.userDataParams[USER_PARAMS_INDEX.fName]),
-    //             password: req.body.password1,
-    //             confirmPassword: req.body.password2
-    //         })
-    //         user.save()
-    //             .then (() =>{
-    //                 cookiesHandler.createErrorCookie(req, res, cookiesHandler.REGISTER_SUCCESS)
-    //                 cookiesHandler.clearUserDataCookie(req, res)
-    //                 res.redirect("/")
-    //             })
-    //             .catch((err)=>{
-    //                 console.log(err)
-    //                 console.log(typeof err)
-    //                 if (err instanceof Sequelize.ValidationError) {
-    //                     let errorString = ""
-    //                     err.message.split('\n').forEach((elem)=>errorString +=`<li>${elem}</li>`)
-    //                     let error= `<ul>${errorString}</ul>`
-    //                     cookiesHandler.createErrorCookie(req, res, error)
-    //                     if (error.includes("password"))
-    //                         res.redirect('/users/register-password')
-    //                 }
-    //                 else
-    //                     cookiesHandler.createErrorCookie(req, res, `Oops, something went wrong... ${err}`)
-    //                 if (!res.headersSent)
-    //                     res.redirect('/users/register')
-    //             })}
-    //     catch (err){
-    //         cookiesHandler.createErrorCookie(req, res, `Oops, something went wrong...${err.message}`)
-    //         res.redirect('/users/register-password')
-    //     }
-    // }
-}}
+}
 
 
 

@@ -10,9 +10,10 @@ const constantsErrorMessageModule= (function(){
 
     const LOGIN_ERR = "User doesn't exist or you entered invalid email/ password"
     const SOMETHING_WENT_WRONG = "Oops, something went wrong..."
+    const INVALID_STRING_ERROR = "should be a string"
     return {
         EMAIL_EXIST_ERR, EMPTY_ERR, MIN_AND_MAX_LENGTH_ERR, MAX_LENGTH_ERR, NO_ALPHA_ERR,EMAIL_ERR,
-        INVALID_PASSWORD_ERR, LOGIN_ERR, SOMETHING_WENT_WRONG
+        INVALID_PASSWORD_ERR, LOGIN_ERR, SOMETHING_WENT_WRONG,INVALID_STRING_ERROR
     }
 })();
 

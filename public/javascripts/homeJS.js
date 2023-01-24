@@ -14,14 +14,16 @@
     const MAX_OK_STATUS = 300;
     let MODAL_ERROR_MESSAGE_ELEMENT;
     let MODAL_ERROR_BUTTON_ELEMENT;
+    let USER_DATE_ELEMENT;
 
     //----------------------------------- listeners initial's definition ----------------------------------------------
 
     document.addEventListener("DOMContentLoaded", () => {
         SPINNER_BACKGROUND_ELEMENT = document.getElementsByClassName(SPINNER_BACKGROUND_CLASS_NAME)[0]
-        SHOW_MORE_BUTTON_ELEMENT = document.getElementById("show-more-button")
-        MODAL_ERROR_MESSAGE_ELEMENT = document.getElementById("errorMessage")
-        MODAL_ERROR_BUTTON_ELEMENT = document.getElementById("errorModalBtn")
+        SHOW_MORE_BUTTON_ELEMENT = document.getElementById("show-more-button");
+        MODAL_ERROR_MESSAGE_ELEMENT = document.getElementById("errorMessage");
+        MODAL_ERROR_BUTTON_ELEMENT = document.getElementById("errorModalBtn");
+        USER_DATE_ELEMENT = document.getElementById("pictureDate");
         const nasaFormElement = document.getElementById("dateForm");
         nasaFormElement.addEventListener("submit", function(event){
             getData(event);
@@ -98,16 +100,25 @@
         }
     }
 
-    async function fetchRequest (url, goodResHandler, message){
+    async function fetchRequest (url, responseHandler, message){
+        SPINNER_BACKGROUND_ELEMENT.classList.remove("d-none")
         try{
             let res = await fetch(url, message)
             await status(res)
             const data = await res.json()
-            goodResHandler(data)
+            responseHandler(data)
         }
         catch(err) {
+            SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
             errorHandler(err)
         }
+        SPINNER_BACKGROUND_ELEMENT.classList.add("d-none")
+    }
+
+    function sendNasaRequest (event){
+        event.preventDefault();
+        let url = event.target.action;
+        let getDate = USER_DATE_ELEMENT.value;
     }
 
     /**
