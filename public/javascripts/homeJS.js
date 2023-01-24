@@ -7,19 +7,27 @@
     const IMAGES_TO_FETCH = 5;
     let currStartDate = "";
     let NASA_API_URL = "https://api.nasa.gov/planetary/apod/"
+    const SPINNER_BACKGROUND_CLASS_NAME = "spinner-background"
+    let SPINNER_BACKGROUND_ELEMENT;
+    let SHOW_MORE_BUTTON_ELEMENT;
 
     //----------------------------------- listeners initial's definition ----------------------------------------------
 
     document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("dateForm").addEventListener("submit", function(event){
+        SPINNER_BACKGROUND_ELEMENT = document.getElementsByClassName(SPINNER_BACKGROUND_CLASS_NAME)[0]
+        SHOW_MORE_BUTTON_ELEMENT = document.getElementById("show-more-button")
+        const nasaFormElement = document.getElementById("dateForm");
+        nasaFormElement.addEventListener("submit", function(event){
             getData(event);
         })
-        document.getElementById("show-more-button").addEventListener("click", function (){
+        SHOW_MORE_BUTTON_ELEMENT.addEventListener("click", function (){
             fetchData(currStartDate, NASA_API_URL, false);
         })
         let date =  document.getElementById("pictureDate");
         let todaysDate = new Date();
         date.value = todaysDate.toISOString().substring(0,10);
+        const event = new Event("submit", {bubbles: true, cancelable: true});
+        nasaFormElement.dispatchEvent(event);
     });
 
 
@@ -41,6 +49,7 @@
      * @param newPage Parameter that tells the function if the page need to be regenerated.
      */
     function fetchData(end, url, newPage=true){
+        SPINNER_BACKGROUND_ELEMENT.classList.remove("d-none")
         const newDate = new Date(end);
         newDate.setDate(newDate.getDate() - IMAGES_TO_FETCH + 1);
         let start = newDate.toISOString().substring(0,10);
@@ -71,12 +80,15 @@
                 IMAGES.forEach(function (image){
                     content.appendChild(image.getHtml());
                 })
-                showAndHide("show-more-button", "show");
+                //showAndHide("show-more-button", "show");
+                SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
             })
         }).catch(error =>{
-            showAndHide("show-more-button", "hide");
+            //showAndHide("show-more-button", "hide");
+            SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
             console.log("ERRORRRRRRR");
-        });
+        })
+            .finally(()=>{SPINNER_BACKGROUND_ELEMENT.classList.add("d-none")});
     }
 
     /**
@@ -203,15 +215,11 @@
          * @returns {HTMLImageElement}
          */
         #getImage(){
-            let ans = document.createElement(`${(this.#data.media_type === "video") ? "video": "img"}`)
-            // let ans = document.createElement("img");
-            // if (this.#data.media_type === "video"){
-            //     ans = document.createElement("iframe");
-            // }
+            let ans = document.createElement(`${(this.#data.media_type === "video") ? "iframe": "img"}`)
             ans.src = this.#data.url;
             ans.alt = "";
-            ans.className = "img-fluid col-6";
-            ans.style = "max-width: 400px; max-height: 320px; object-fit: cover";
+            ans.className = "img-fluid col-6 nasa-images";
+            //ans.style = "max-width: 400px; max-height: 320px; object-fit: cover";
             return ans;
         }
 
@@ -245,14 +253,15 @@
             let li = document.createElement("li");
             li.className = "list-group-item";
             let commentButton = document.createElement('button');
-            commentButton.style = "max-width: 25%";
+            //commentButton.style = "max-width: 25%";
             commentButton.className = "comment-button btn btn-primary"
             commentButton.innerText = 'Comment';
             commentButton.id = `${this.#data.date}-comment_button`;
             commentButton.addEventListener("click", (event)=>{
-
-                showAndHide(`${this.#data.date}-comment_button`, "hide");
-                showAndHide(`${this.#data.date}-div`, "toggle");
+                document.getElementById(`${this.#data.date}-comment_button`).classList.add("d-none")
+                document.getElementById(`${this.#data.date}-div`).classList.toggle("d-none")
+                //showAndHide(`${this.#data.date}-comment_button`, "hide");
+                //showAndHide(`${this.#data.date}-div`, "toggle");
             });
             li.appendChild(commentButton);
             return li;
@@ -292,9 +301,10 @@
         #getCommentTextField(){
             let div = document.createElement('div');
             let textArea = document.createElement("textarea");
-            div.className = "input-group";
+            //div.className = "input-group";
+            div.className = "input-group d-none";
             div.id = `${this.#data.date}-div`;
-            div.style = "display: none";
+            //div.style = "display: none";
             textArea.className = "col-12";
             textArea.ariaLabel= "With textarea";
             textArea.maxLength = "128";
@@ -315,7 +325,8 @@
             showComments.className = 'btn btn-primary col-12 my-2';
             showComments.addEventListener("click", (event)=>{
                 this.#displayComments = !this.#displayComments;
-                showAndHide(`${event.target.id}-comments`, "toggle");
+                //showAndHide(`${event.target.id}-comments`, "toggle");
+                document.getElementById(`${event.target.id}-comments`).classList.toggle("d-none")
                 showComments.innerText = this.#displayComments ? 'Hide Comments' : 'Show Comments';
             });
             return showComments
@@ -328,9 +339,10 @@
          */
         #getComments(){
             let comments = document.createElement('ol');
-            comments.className = "list-group col-12";
+            //comments.className = "list-group col-12";
+            comments.className = `list-group col-12 ${this.#displayComments ? "": "d-none"}`;
             comments.id = `${this.#data.date}-show-comments`;
-            comments.style.display = this.#displayComments ? "block" : "none";
+            // comments.style.display = this.#displayComments ? "block" : "none";
             const imagePointer = this;
             imagePointer.#comments.forEach(function(val){
                 let li = document.createElement('li');
@@ -381,10 +393,10 @@
                 .then((response)=>{
                     return response.json();
                 }).then((comments)=>{
-                this.#comments = comments;
-                document.getElementById(`${this.#data.date}-post`).innerHTML = "";
-                document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
-                this.#lastUpdate = Date.now();
+                    this.#comments = comments;
+                    document.getElementById(`${this.#data.date}-post`).innerHTML = "";
+                    document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
+                    this.#lastUpdate = Date.now();
             });
         }
         getLastUpdate(){

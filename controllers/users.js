@@ -67,7 +67,7 @@ exports.postLogin = async (req, res)=>{
         await dbHandler.validateUser(loginUser,["email","password"])
         const user =  await dbHandler.isUserRegisterCheck(loginUser)
         req.session.isLogin = true
-        req.session.username = `${user.lName} ${user.fName}`
+        req.session.username = `${user.fName} ${user.lName}`
         req.session.userId = user.id
         res.redirect("/home")
     }

@@ -19,7 +19,9 @@ const utilitiesModule = (function(){
     }
 
     const stringToTitle = (string) =>{
-        return (isString(string))? string.split(" ").map((str)=>str.charAt(0).toUpperCase() +str.slice(1)).join(" ") : string
+        let convertedStr = (isString(string))? string.split(" ").map((str)=>str.charAt(0).toUpperCase() +str.slice(1)).reverse().join(" ") : string
+        console.log(convertedStr)
+        return convertedStr
     }
 
     return {trimAndLower,isString, stringToTitle}
