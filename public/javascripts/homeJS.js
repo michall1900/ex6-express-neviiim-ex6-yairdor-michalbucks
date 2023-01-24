@@ -7,19 +7,37 @@
     const IMAGES_TO_FETCH = 5;
     let currStartDate = "";
     let NASA_API_URL = "https://api.nasa.gov/planetary/apod/"
+    const SPINNER_BACKGROUND_CLASS_NAME = "spinner-background"
+    let SPINNER_BACKGROUND_ELEMENT;
+    let SHOW_MORE_BUTTON_ELEMENT;
+    const MIN_OK_STATUS = 200;
+    const MAX_OK_STATUS = 300;
+    let MODAL_ERROR_MESSAGE_ELEMENT;
+    let MODAL_ERROR_BUTTON_ELEMENT;
 
     //----------------------------------- listeners initial's definition ----------------------------------------------
 
     document.addEventListener("DOMContentLoaded", () => {
-        document.getElementById("dateForm").addEventListener("submit", function(event){
+        SPINNER_BACKGROUND_ELEMENT = document.getElementsByClassName(SPINNER_BACKGROUND_CLASS_NAME)[0]
+        SHOW_MORE_BUTTON_ELEMENT = document.getElementById("show-more-button")
+        MODAL_ERROR_MESSAGE_ELEMENT = document.getElementById("errorMessage")
+        MODAL_ERROR_BUTTON_ELEMENT = document.getElementById("errorModalBtn")
+        const nasaFormElement = document.getElementById("dateForm");
+        nasaFormElement.addEventListener("submit", function(event){
             getData(event);
         })
-        document.getElementById("show-more-button").addEventListener("click", function (){
+        SHOW_MORE_BUTTON_ELEMENT.addEventListener("click", function (){
             fetchData(currStartDate, NASA_API_URL, false);
         })
+
+        //Display current date.
         let date =  document.getElementById("pictureDate");
         let todaysDate = new Date();
         date.value = todaysDate.toISOString().substring(0,10);
+
+        //Ask for the first time the feed page without user involved.
+        const event = new Event("submit", {bubbles: true, cancelable: true});
+        nasaFormElement.dispatchEvent(event);
     });
 
 
@@ -34,6 +52,64 @@
         fetchData(getDate, theurl);
     }
 
+
+    /**
+     * The function is showing the error message to the user inside a modal.
+     * The assumption is the error argument is Error object.
+     * @param error - Error object.
+     */
+    function errorHandler(error){
+
+        if (typeof(error) === "string" || error instanceof String) {
+
+            const [status, errorMsg] = [...error.split(",")]
+            if (status === "301" || status === "302") {
+                //do redirect from client
+                return
+            }
+            else{
+                MODAL_ERROR_MESSAGE_ELEMENT.innerText = error
+            }
+        }
+        else{
+            MODAL_ERROR_MESSAGE_ELEMENT.innerText = error
+        }
+        // document.getElementById(ERROR_MESSAGE_SECTION_ID).innerHTML =
+        //     (error.message && error.message.includes("status"))?error.message: UNKNOWN_MESSAGE
+        MODAL_ERROR_BUTTON_ELEMENT.click()
+
+
+    }
+
+    /**
+     * The function is checking an error if there was status code < 200 or >=300.
+     * The assumption is the response is a response from server.
+     * @param response - A response object.
+     * @returns {Promise<never>|Promise<unknown>}
+     */
+    async function status(response) {
+        if (response.status >= MIN_OK_STATUS && response.status < MAX_OK_STATUS) {
+            return response
+        }
+        else {
+            return response.text().then(text =>{
+                throw new Error(`status: ${response.status} ,error: ${text}`)
+            })
+        }
+    }
+
+    async function fetchRequest (url, goodResHandler, message){
+        try{
+            let res = await fetch(url, message)
+            await status(res)
+            const data = await res.json()
+            goodResHandler(data)
+        }
+        catch(err) {
+            errorHandler(err)
+        }
+    }
+
     /**
      * The function fetch from NASA api the images links and displays it on the screen.
      * @param end The date of the most old pictures wanted to be displayed.
@@ -41,6 +117,7 @@
      * @param newPage Parameter that tells the function if the page need to be regenerated.
      */
     function fetchData(end, url, newPage=true){
+        SPINNER_BACKGROUND_ELEMENT.classList.remove("d-none")
         const newDate = new Date(end);
         newDate.setDate(newDate.getDate() - IMAGES_TO_FETCH + 1);
         let start = newDate.toISOString().substring(0,10);
@@ -71,12 +148,15 @@
                 IMAGES.forEach(function (image){
                     content.appendChild(image.getHtml());
                 })
-                showAndHide("show-more-button", "show");
+                //showAndHide("show-more-button", "show");
+                SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
             })
         }).catch(error =>{
-            showAndHide("show-more-button", "hide");
+            //showAndHide("show-more-button", "hide");
+            SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
             console.log("ERRORRRRRRR");
-        });
+        })
+            .finally(()=>{SPINNER_BACKGROUND_ELEMENT.classList.add("d-none")});
     }
 
     /**
@@ -105,15 +185,6 @@
             });
             TIMEOUT = setTimeout(updateImages, 15000);
         });
-    }
-
-    /**
-     * This function gets an id of which we want to toggle the display for, and hide the current displayed element.
-     * @param divId The element id.
-     */
-    function changeShownDiv(divId) {
-        showAndHide(SHOWN_DIV, "hide");
-        showAndHide(divId, "show");
     }
 
 
@@ -203,14 +274,11 @@
          * @returns {HTMLImageElement}
          */
         #getImage(){
-            let ans = document.createElement("img");
-            if (this.#data.media_type === "video"){
-                ans = document.createElement("iframe");
-            }
+            let ans = document.createElement(`${(this.#data.media_type === "video") ? "iframe": "img"}`)
             ans.src = this.#data.url;
             ans.alt = "";
-            ans.className = "img-fluid col-6";
-            ans.style = "max-width: 400px; max-height: 320px; object-fit: cover";
+            ans.className = "img-fluid col-6 nasa-images";
+            //ans.style = "max-width: 400px; max-height: 320px; object-fit: cover";
             return ans;
         }
 
@@ -219,9 +287,20 @@
          * @returns {HTMLParagraphElement}
          */
         #getInfo(){
-            let ans = document.createElement("p");
-            ans.className = "col-6";
-            ans.innerText = `Copyright: ${this.#data.copyright}\nDate: ${this.#data.date}\nExplanation: ${this.#data.explanation}\n`;
+            let ans = document.createElement("div");
+            ans.className = "col";
+            let row = document.createElement("div");
+            row.className = "row"
+            let firstCol = document.createElement("div")
+            firstCol.className = "col-12"
+            firstCol.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"} Date: ${this.#data.date}`
+            let secondCol = document.createElement("div")
+            secondCol.className = "col-12"
+            secondCol.innerText = `Explanation: ${this.#data.explanation ?? ""}`
+            //ans.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"}\nDate: ${this.#data.date}\nExplanation: ${this.#data.explanation}\n`;
+            row.appendChild(firstCol)
+            row.appendChild(secondCol)
+            ans.appendChild(row)
             return ans;
         }
 
@@ -233,14 +312,14 @@
             let li = document.createElement("li");
             li.className = "list-group-item";
             let commentButton = document.createElement('button');
-            commentButton.style = "max-width: 25%";
             commentButton.className = "comment-button btn btn-primary"
             commentButton.innerText = 'Comment';
             commentButton.id = `${this.#data.date}-comment_button`;
             commentButton.addEventListener("click", (event)=>{
-
-                showAndHide(`${this.#data.date}-comment_button`, "hide");
-                showAndHide(`${this.#data.date}-div`, "toggle");
+                document.getElementById(`${this.#data.date}-comment_button`).classList.add("d-none")
+                document.getElementById(`${this.#data.date}-div`).classList.toggle("d-none")
+                //showAndHide(`${this.#data.date}-comment_button`, "hide");
+                //showAndHide(`${this.#data.date}-div`, "toggle");
             });
             li.appendChild(commentButton);
             return li;
@@ -280,9 +359,10 @@
         #getCommentTextField(){
             let div = document.createElement('div');
             let textArea = document.createElement("textarea");
-            div.className = "input-group";
+            //div.className = "input-group";
+            div.className = "input-group d-none";
             div.id = `${this.#data.date}-div`;
-            div.style = "display: none";
+            //div.style = "display: none";
             textArea.className = "col-12";
             textArea.ariaLabel= "With textarea";
             textArea.maxLength = "128";
@@ -300,10 +380,11 @@
             let showComments = document.createElement("button");
             showComments.innerText = "Show Comments";
             showComments.id = `${this.#data.date}-show`;
-            showComments.className = 'btn btn-primary col-12';
+            showComments.className = 'btn btn-primary col-12 my-2';
             showComments.addEventListener("click", (event)=>{
                 this.#displayComments = !this.#displayComments;
-                showAndHide(`${event.target.id}-comments`, "toggle");
+                //showAndHide(`${event.target.id}-comments`, "toggle");
+                document.getElementById(`${event.target.id}-comments`).classList.toggle("d-none")
                 showComments.innerText = this.#displayComments ? 'Hide Comments' : 'Show Comments';
             });
             return showComments
@@ -316,9 +397,10 @@
          */
         #getComments(){
             let comments = document.createElement('ol');
-            comments.className = "list-group col-12";
+            //comments.className = "list-group col-12";
+            comments.className = `list-group col-12 ${this.#displayComments ? "": "d-none"}`;
             comments.id = `${this.#data.date}-show-comments`;
-            comments.style.display = this.#displayComments ? "block" : "none";
+            // comments.style.display = this.#displayComments ? "block" : "none";
             const imagePointer = this;
             imagePointer.#comments.forEach(function(val){
                 let li = document.createElement('li');
@@ -369,10 +451,10 @@
                 .then((response)=>{
                     return response.json();
                 }).then((comments)=>{
-                this.#comments = comments;
-                document.getElementById(`${this.#data.date}-post`).innerHTML = "";
-                document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
-                this.#lastUpdate = Date.now();
+                    this.#comments = comments;
+                    document.getElementById(`${this.#data.date}-post`).innerHTML = "";
+                    document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
+                    this.#lastUpdate = Date.now();
             });
         }
         getLastUpdate(){

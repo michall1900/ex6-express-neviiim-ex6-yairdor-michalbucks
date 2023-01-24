@@ -1,55 +1,6 @@
 'use strict';
 const constants = require("../modules/constantsErrorMessageModule.js");
 
-/** @type {import('sequelize-cli').Migration} */
-
-module.exports = {
-  async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Users', {
-      id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
-        type: Sequelize.INTEGER
-      },
-      fName: {
-        type: Sequelize.STRING,
-        allowNull: {args: false, msg: `${constants.EMPTY_ERR} first name.`}
-      },
-       lName: {
-         type: Sequelize.STRING,
-         allowNull: {args: false, msg: `${constants.EMPTY_ERR} last name.`}
-       },
-      email: {
-        type: Sequelize.STRING,
-        unique: {args: true , msg: constants.EMAIL_EXIST_ERR},
-        allowNull: {args: false, msg: `${constants.EMPTY_ERR} email.`}
-
-      },
-      password: {
-        type: Sequelize.STRING,
-        allowNull: {args: false, msg: `${constants.EMPTY_ERR} password.`}
-
-      },
-      createdAt: {
-        allowNull: false,
-        type: Sequelize.DATE
-      },
-      updatedAt: {
-        allowNull: false,
-        type: Sequelize.DATE
-      }
-    });
-  },
-
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Users');
-  }
-};
-
-'use strict';
-const constants = require("../modules/constantsErrorMessageModule.js");
-
 const {
   Model
 } = require('sequelize');
@@ -67,9 +18,11 @@ module.exports = (sequelize, DataTypes) => {
   User.init({
     email: {
       type: DataTypes.STRING,
+      allowNull: false,
       validate: {
         isEmail: {msg: constants.EMAIL_ERR},
         notEmpty:{msg: `${constants.EMPTY_ERR} email.`},
+        notNull:{msg: `${constants.EMPTY_ERR} email.`},
         max:{
           args:[32],
           msg:`Invalid email. ${constants.MAX_LENGTH_ERR}`
@@ -78,8 +31,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     fName: {
       type: DataTypes.STRING,
+      allowNull: false,
       validate: {
         isAlpha: {msg:`Invalid first name ${constants.NO_ALPHA_ERR}`},
+        notNull:{msg: `${constants.EMPTY_ERR} first name.`},
         len: {
           args: [3, 32],
           msg: `Invalid first name. ${constants.MIN_AND_MAX_LENGTH_ERR}`
@@ -88,8 +43,10 @@ module.exports = (sequelize, DataTypes) => {
     },
    lName: {
      type: DataTypes.STRING,
+     allowNull: false,
      validate: {
        isAlpha: {msg:`Invalid last name ${constants.NO_ALPHA_ERR}`},
+       notNull:{msg: `${constants.EMPTY_ERR} last name.`},
        len: {
          args: [3, 32],
          msg: `Invalid last name. ${constants.MIN_AND_MAX_LENGTH_ERR}`
@@ -98,24 +55,33 @@ module.exports = (sequelize, DataTypes) => {
    },
     password: {
       type: DataTypes.STRING,
+      allowNull: false,
       validate: {
         notEmpty: {msg: `${constants.EMPTY_ERR} password.`},
+        notNull:{msg: `${constants.EMPTY_ERR} password.`},
         max:{
           args:[32],
-          msg:`Invalid password. ${constants.MAX_LENGTH_ERR}`
+          msg:`Invalid password 1. ${constants.MAX_LENGTH_ERR}`
+        },
+        isMatchingPasswords: function(value){
+          //Checking if passwordConfirm defined to let validation work while login.
+          if(this.passwordConfirm && this.passwordConfirm !== value)
+            throw new Error(constants.INVALID_PASSWORD_ERR)
         }
       }
     },
     passwordConfirm: {
       type: DataTypes.VIRTUAL,
+      allowNull: false,
       validate: {
-        notEmpty: {msg: `${constants.EMPTY_ERR} password.`},
+        notEmpty: {msg: `${constants.EMPTY_ERR} confirm password.`},
+        notNull: {msg: `${constants.EMPTY_ERR} confirm password.`},
         max:{
           args:[32],
-          msg:`Invalid password. ${constants.MAX_LENGTH_ERR}`
+          msg:`Invalid confirm password. ${constants.MAX_LENGTH_ERR}`
         },
         isString: (value)=>{
-          if(!value.isString() || typeof value !== 'string' || this.password !== value)
+          if(!value instanceof String || typeof value !== 'string')
             throw new Error(constants.INVALID_PASSWORD_ERR)
         }
       }

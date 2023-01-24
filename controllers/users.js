@@ -67,7 +67,7 @@ exports.postLogin = async (req, res)=>{
         await dbHandler.validateUser(loginUser,["email","password"])
         const user =  await dbHandler.isUserRegisterCheck(loginUser)
         req.session.isLogin = true
-        req.session.username = `${user.lName} ${user.fName}`
+        req.session.username = `${user.fName} ${user.lName}`
         req.session.userId = user.id
         res.redirect("/home")
     }
@@ -226,7 +226,7 @@ exports.postPassword = async (req,res)=>{
                 lName: utilities.trimAndLower(req.data.userDataParams[USER_PARAMS_INDEX.lName]),
                 fName: utilities.trimAndLower(req.data.userDataParams[USER_PARAMS_INDEX.fName]),
                 password: req.body.password1,
-                confirmPassword: req.body.password2
+                passwordConfirm: req.body.password2
             })
             cookiesHandler.createErrorCookie(req, res, cookiesHandler.REGISTER_SUCCESS)
             cookiesHandler.clearUserDataCookie(req, res)
