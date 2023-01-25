@@ -162,7 +162,7 @@
      */
     function errorHandler(error){
         // need to fix this function
-        if (error.message && validateModule.isString(error.message)) {
+        if (error.message) {
 
             const [status, errorMsg] = [...error.message.split(",")]
             if (status.includes("301") || status.includes("302")) {
@@ -170,7 +170,7 @@
                 return
             }
             else{
-                MODAL_ERROR_MESSAGE_ELEMENT.innerText = error
+                MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${errorMsg}`
             }
         }
         else{
@@ -272,7 +272,8 @@
         newImages.forEach(function (image){
             CONTENT_ELEMENT.appendChild(image.getHtml());
         })
-        IMAGES.push([...newImages])
+        IMAGES.push(...newImages)
+        console.log(IMAGES)
         SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
     }
 
@@ -390,6 +391,14 @@
         let content = document.getElementById(id).value;
         return content.trim().length > 0;
     }
+    function handleCommentsUpdateResponse(comments, currentImage){
+        currentImage.handleCommentsUpdateResponse(comments)
+
+    }
+
+    function responseToChangeComments(_,currentImage){
+        currentImage.updateComments()
+    }
 
     class Image{
         #lastUpdate
@@ -462,7 +471,6 @@
             ans.src = this.#data.url;
             ans.alt = "";
             ans.className = "img-fluid col-6 nasa-images";
-            //ans.style = "max-width: 400px; max-height: 320px; object-fit: cover";
             return ans;
         }
 
@@ -521,16 +529,25 @@
             button.innerText = "Send Comment";
             button.addEventListener("click", (event)=> {
                 if (sendCommentValid(`${this.#data.date}-text-area`)) {
-                    fetch("/home/api", {
+                    let message = {
                         method: "POST",
                         headers: {"Content-Type": "application/json"},
                         body: JSON.stringify({
                             "picDate": this.#data.date,
                             "content": document.getElementById(`${this.#data.date}-text-area`).value
                         })
-                    }).then((res)=>{
-                        this.updateComments();
-                    });
+                    }
+                    fetchRequest(`${COMMENTS_SERVER_URL}`, responseToChangeComments,this, message)
+                    // fetch("/home/api", {
+                    //     method: "POST",
+                    //     headers: {"Content-Type": "application/json"},
+                    //     body: JSON.stringify({
+                    //         "picDate": this.#data.date,
+                    //         "content": document.getElementById(`${this.#data.date}-text-area`).value
+                    //     })
+                    // }).then((res)=>{
+                    //     this.updateComments();
+                    // });
                 }
             });
             li.appendChild(button);
@@ -619,11 +636,13 @@
             button.addEventListener("click", (event)=>{
                 let params = new URLSearchParams();
                 params.append("id", id.toString())
-                fetch(`/home/api?${params.toString()}`, {
-                    method: "DELETE"
-                }).then((event)=>{
-                    this.updateComments();
-                });
+                let message = {method:"DELETE"}
+                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,responseToChangeComments,this,message)
+                // fetch(`/home/api?${params.toString()}`, {
+                //     method: "DELETE"
+                // }).then((event)=>{
+                //     this.updateComments();
+                // });
             });
 
             return button;
@@ -634,8 +653,8 @@
          */
         updateComments(){
             let params = new URLSearchParams()
-            params.append("images",`[${this.#data.date}]`)
-            fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,this.#handleCommentsUpdateResponse)
+            params.append("images",`["${this.#data.date}"]`)
+            fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,handleCommentsUpdateResponse, this)
             // fetch(`/home/api?images=["${this.#data.date}"]`)
             //     .then((response)=>{
             //         return response.json();
@@ -647,13 +666,13 @@
             // });
 
         }
-
-        #handleCommentsUpdateResponse(comments){
+        handleCommentsUpdateResponse(comments){
             this.#comments = comments;
             document.getElementById(`${this.#data.date}-post`).innerHTML = "";
             document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
             this.#lastUpdate = Date.now();
         }
+
         getLastUpdate(){
             return this.#lastUpdate;
         }
