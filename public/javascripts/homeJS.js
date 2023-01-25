@@ -2,7 +2,6 @@
     let TIMEOUT = setTimeout(updateImages, 15000);
     let USERNAME = "";
     let IMAGES = [];
-    let SHOWN_DIV = "homepage-div";
     const APIKEY = "aKRnQfhPmxqeskcpdkcfomXKcIGbW1p8FFvuQhsa";
     const IMAGES_TO_FETCH = 5;
     let currStartDate = "";
@@ -19,7 +18,7 @@
     let CONTENT_ELEMENT;
     /**
      * This module is validates fields.
-     * @type {{isValidItemId: (function(*)), isValidCommentsArray: (function(*)), isValidUsername: (function(*)), isValidTimeStamp: (function(*)), isValidDate: (function(*)), isValidURL: ((function(*): boolean)|*)}}
+     * @type {{isValidItemId: (function(*)), isValidCommentsArray: (function(*)), isValidTimeStamp: (function(*)), isValidDate: (function(*)), isString: (function(*)), isValidURL: ((function(*): boolean)|*)}}
      */
     const validateModule =(function(){
         const PARAMS_IN_COMMENTS_ARRAY_RESULT = 2
@@ -48,14 +47,6 @@
                 object.toString().match(/\d{4}-\d{2}-\d{2}/)) && !!new Date(object))
         }
 
-        /**
-         * This function is checking if username is in the wanted format (only letters and digits).
-         * @param userName -
-         * @returns {boolean}
-         */
-        const isUserNameInFormat = (userName)=>{
-            return (isString(userName) && !!userName.match(`^[a-zA-Z0-9]{1,${globalModule.MAX_USER_NAME_LENGTH}}$`,userName))
-        }
 
         /**
          * Return if object is a string or not.
@@ -66,14 +57,6 @@
             return (object instanceof String || typeof (object) === "string")
         }
 
-        /**
-         * Return if username is valid (in wanted format and define)
-         * @param object
-         * @returns {boolean}
-         */
-        function isValidUsername(object){
-            return (!!object && isUserNameInFormat(object))
-        }
 
         /**
          * Return if item id is valid (in url format and define)
@@ -110,7 +93,6 @@
             isValidItemId,
             isValidTimeStamp,
             isValidCommentsArray,
-            isValidUsername,
             isString
         }
     })();
@@ -143,16 +125,16 @@
     });
 
 
-    /**
-     * The function load 5 more images from the nasa api and displays it.
-     * @param event click event parameter.
-     */
-    function getData(event){
-        event.preventDefault();
-        let theurl = event.target.action;
-        let getDate = document.getElementById("pictureDate").value;
-        fetchData(getDate, theurl);
-    }
+    // /**
+    //  * The function load 5 more images from the nasa api and displays it.
+    //  * @param event click event parameter.
+    //  */
+    // function getData(event){
+    //     event.preventDefault();
+    //     let theurl = event.target.action;
+    //     let getDate = document.getElementById("pictureDate").value;
+    //     fetchData(getDate, theurl);
+    // }
 
 
     /**
@@ -246,10 +228,24 @@
     function handleNasaResponse(data){
         validateNasaResponse(data)
         //create here images without comments and display them
+        let newImages = []
+        data.forEach(function(item){
+            newImages.push(new Image(item));
+        });
+        newImages.sort((a,b)=>{
+            return b.getDate().toString().localeCompare(a.getDate().toString());
+        });
+        newImages.forEach(function (image){
+            CONTENT_ELEMENT.appendChild(image.getImageHtml());
+        })
+        let startIndex = IMAGES.length
+        IMAGES.push(...newImages)
         let params = new URLSearchParams()
+
         //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
         params.append("images",`[${getPicsDates(data).toString()}]`)
-        fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,buildImages,data)
+        fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,buildImages,startIndex)
+        SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
     }
 
     function validateNasaResponse(data){
@@ -257,24 +253,11 @@
             !data.every((element)=>validateModule.isValidURL(element.url) && validateModule.isValidDate(element.date)))
             throw (new Error("Error occurred while getting Nasa response"))
     }
-    //will split to new function - one for new images and one for new comments
-    function buildImages(comments, imagesData){
-        //validate comments here
-        let newImages = []
-        imagesData.forEach(function(item){
 
-            newImages.push(new Image(item, getImageComments(comments, item.date)));
-        });
-        //will be moved to the create images function.
-        newImages.sort((a,b)=>{
-            return b.getDate().toString().localeCompare(a.getDate().toString());
-        });
-        newImages.forEach(function (image){
-            CONTENT_ELEMENT.appendChild(image.getHtml());
-        })
-        IMAGES.push(...newImages)
-        console.log(IMAGES)
-        SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
+    function buildImages(comments, startIndex){
+        //needs to validate comments
+        //validateComments(comments)
+        IMAGES.slice(startIndex).forEach((img)=>{img.setComments(getImageComments(comments, img.getDate()))})
     }
 
     function validateComments(comments){
@@ -361,6 +344,7 @@
     }
 
     function handleUpdateResponse(version){
+        //should validate returned version format and check for value
         IMAGES.forEach((image)=>{
             if(parseInt(version["value"]) > image.getLastUpdate())
                 image.updateComments();
@@ -392,57 +376,47 @@
         return content.trim().length > 0;
     }
     function handleCommentsUpdateResponse(comments, currentImage){
-        currentImage.handleCommentsUpdateResponse(comments)
-
+        currentImage.setComments(comments)
     }
 
     function responseToChangeComments(_,currentImage){
         currentImage.updateComments()
     }
 
-    class Image{
+    class Image {
         #lastUpdate
         #date
         #data
         #comments = []
         #displayComments
-        constructor(item, comments = []) {
+        #imageHtml
+        #commentsElement
+        constructor(item) {
             this.#lastUpdate = 0
             this.#date = item.date;
             this.#data = item;
             this.#displayComments = false;
-            this.#comments = comments;
         }
 
         setComments(comments){
-            //this will be change, we want to delete comments from don and insert new one
+            //this will be change, we want to delete comments from dom and insert new one into it
 
-        }
-        /**
-         * The method returns the image HTML element.
-         * @returns {HTMLLIElement} The image's html.
-         */
-        getHtml(){
-            let ans = document.createElement('li');
-            ans.className = "list-group-item";
-            ans.id = `${this.#data.date}-post`;
-            ans.appendChild(this.#generateHtml());
-            return ans;
+            //easy way - don't delete from dom directly, but delete all the comments that should be deleted and
+            //insert the new one.
+            // After that, use the code below to put again all comments in dom.
+            // Harder way - delete each element from dom, and add the new once
+            // (you could give them to #setHtmlComments).
+            this.#comments = comments
+            this.#setHtmlComments(this.#comments)
+            this.#lastUpdate = Date.now();
         }
 
-        /**
-         * The method generates or regenerates the image's html element.
-         */
-        #generateHtml(){
-            let row = document.createElement("div");
-            row.className = "row";
-            row.appendChild(this.#getName());
-            row.appendChild(this.#getImage());
-            row.appendChild(this.#getInfo());
-            row.appendChild(this.#getComments());
-            row.appendChild(this.#getShowComments());
-            return row;
+        getImageHtml(){
+            if (!this.#imageHtml)
+                this.#initializePictureHtml()
+            return this.#imageHtml
         }
+
         /**
          * The method returns the images date (by the NASA api).
          * @returns {string}
@@ -451,6 +425,63 @@
             return this.#data.date;
         }
 
+        #setHtmlComments(newComments){
+            this.#commentsElement.innerText = ""
+            const imagePointer = this;
+            newComments.forEach(function(val){
+                let li = document.createElement('li');
+                li.className = "list-group-item mt-2 bg-light border-5 border-white";
+                let div = document.createElement("div")
+                div.className = "row"
+                div.appendChild(imagePointer.#getUserDataCol(val))
+                div.appendChild(imagePointer.#getContentAndDeleteCol(val))
+                li.appendChild(div)
+                imagePointer.#commentsElement.appendChild(li);
+            })
+        }
+        #getUserDataCol(val){
+            let usersDataCol = document.createElement('div');
+            usersDataCol.className = "col-12 col-lg-3 col-xl-2"
+            let username = document.createElement('div');
+            username.className = "text-dark text-break fw-bold";
+            username.innerText = `${val.username}`;
+            usersDataCol.appendChild(username)
+            return usersDataCol
+        }
+        #getContentAndDeleteCol(val){
+            let contentAndDeleteCol = document.createElement('div');
+            contentAndDeleteCol.className = "col-12 col-lg-9 col-xl-10"
+            let contentDiv = document.createElement('div')
+            contentDiv.className = "row"
+            let content = document.createElement('div');
+            content.className = "col-12 text-body text-break text-body"
+            content.innerText = `${val.content}`;
+            contentDiv.appendChild(content)
+            //if(val.username === USERNAME){
+                let deleteDiv = document.createElement('div');
+                deleteDiv.className = "col-12 text-body text-break text-body"
+                deleteDiv.appendChild(this.#getDelButton(val.id));
+                contentDiv.appendChild(deleteDiv)
+            //}
+            contentAndDeleteCol.appendChild(contentDiv)
+            return contentAndDeleteCol
+        }
+        #initializePictureHtml(){
+            this.#imageHtml = document.createElement('li');
+            this.#imageHtml.className = "list-group-item";
+            this.#imageHtml.id = `${this.#data.date}-post`;
+            let imageRow = document.createElement("div");
+            imageRow.className = "row";
+            imageRow.appendChild(this.#getName());
+            imageRow.appendChild(this.#getImage());
+            imageRow.appendChild(this.#getInfo());
+            this.#imageHtml.appendChild(imageRow);
+            let commentsRow = document.createElement("div")
+            commentsRow.className ="row"
+            commentsRow.appendChild(this.#getCommentsElement());
+            commentsRow.appendChild(this.#getShowComments());
+            this.#imageHtml.appendChild(commentsRow);
+        }
         /**
          * This method creates and returns an h3 element with the title of the data
          * @returns {HTMLHeadingElement}
@@ -476,7 +507,7 @@
 
         /**
          * This method creates and returns an p element with the title of the data
-         * @returns {HTMLParagraphElement}
+         * @returns {HTMLDivElement}
          */
         #getInfo(){
             let ans = document.createElement("div");
@@ -484,12 +515,11 @@
             let row = document.createElement("div");
             row.className = "row"
             let firstCol = document.createElement("div")
-            firstCol.className = "col-12"
+            firstCol.className = "col-12 text-break"
             firstCol.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"} Date: ${this.#data.date}`
             let secondCol = document.createElement("div")
-            secondCol.className = "col-12"
+            secondCol.className = "col-12 my-2 text-break fs-5"
             secondCol.innerText = `Explanation: ${this.#data.explanation ?? ""}`
-            //ans.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"}\nDate: ${this.#data.date}\nExplanation: ${this.#data.explanation}\n`;
             row.appendChild(firstCol)
             row.appendChild(secondCol)
             ans.appendChild(row)
@@ -498,32 +528,33 @@
 
         /**
          * This method creates and returns a button element allowing the user to click and add a comment
-         * @returns {HTMLLIElement}
+         * @returns {HTMLDivElement}
          */
         #getCommentButton(){
-            let li = document.createElement("li");
-            li.className = "list-group-item";
+            let row = document.createElement("div");
+            row.className = "row mt-2";
+            row.id=`${this.#data.date}-comment_button`
+            let col = document.createElement("col")
+            col.className="col"
             let commentButton = document.createElement('button');
-            commentButton.className = "comment-button btn btn-primary"
+            commentButton.className = "comment-button btn btn-primary "
             commentButton.innerText = 'Comment';
-            commentButton.id = `${this.#data.date}-comment_button`;
             commentButton.addEventListener("click", (event)=>{
                 document.getElementById(`${this.#data.date}-comment_button`).classList.add("d-none")
                 document.getElementById(`${this.#data.date}-div`).classList.toggle("d-none")
-                //showAndHide(`${this.#data.date}-comment_button`, "hide");
-                //showAndHide(`${this.#data.date}-div`, "toggle");
             });
-            li.appendChild(commentButton);
-            return li;
+            col.appendChild(commentButton)
+            row.appendChild(col);
+            return row;
         }
 
         /**
          * This method creates and returns a button element allowing the user to click and add a comment
-         * @returns {HTMLLIElement}
+         * @returns {HTMLDivElement}
          */
         #getSendCommentButton(){
-            let li = document.createElement("li");
-            li.className = "list-group-item";
+            let div = document.createElement("div");
+            div.className = "col mt-2";
             let button = document.createElement("button");
             button.className ="input-group-text send-comment-button btn btn-primary";
             button.innerText = "Send Comment";
@@ -537,6 +568,10 @@
                             "content": document.getElementById(`${this.#data.date}-text-area`).value
                         })
                     }
+                    document.getElementById(`${this.#data.date}-text-area`).value =""
+                    document.getElementById(`${this.#data.date}-div`).classList.add("d-none")
+                    document.getElementById(`${this.#data.date}-comment_button`).classList.remove("d-none")
+
                     fetchRequest(`${COMMENTS_SERVER_URL}`, responseToChangeComments,this, message)
                     // fetch("/home/api", {
                     //     method: "POST",
@@ -550,8 +585,8 @@
                     // });
                 }
             });
-            li.appendChild(button);
-            return li;
+            div.appendChild(button);
+            return div;
         }
 
 
@@ -562,13 +597,12 @@
         #getCommentTextField(){
             let div = document.createElement('div');
             let textArea = document.createElement("textarea");
-            //div.className = "input-group";
-            div.className = "input-group d-none";
+            div.className = "row mt-2 d-none";
             div.id = `${this.#data.date}-div`;
-            //div.style = "display: none";
-            textArea.className = "col-12";
+            textArea.className = "col-12 border-dark";
             textArea.ariaLabel= "With textarea";
-            textArea.maxLength = "128";
+            textArea.maxLength = 128;
+            textArea.minLength = 1;
             textArea.id = `${this.#data.date}-text-area`;
             div.appendChild(textArea);
             div.appendChild(this.#getSendCommentButton());
@@ -586,7 +620,6 @@
             showComments.className = 'btn btn-primary col-12 my-2';
             showComments.addEventListener("click", (event)=>{
                 this.#displayComments = !this.#displayComments;
-                //showAndHide(`${event.target.id}-comments`, "toggle");
                 document.getElementById(`${event.target.id}-comments`).classList.toggle("d-none")
                 showComments.innerText = this.#displayComments ? 'Hide Comments' : 'Show Comments';
             });
@@ -598,39 +631,29 @@
          * returning it with the username and content data.
          * @returns {HTMLOListElement}
          */
-        #getComments(){
-            let comments = document.createElement('ol');
-            //comments.className = "list-group col-12";
-            comments.className = `list-group col-12 ${this.#displayComments ? "": "d-none"}`;
-            comments.id = `${this.#data.date}-show-comments`;
-            // comments.style.display = this.#displayComments ? "block" : "none";
-            const imagePointer = this;
-            imagePointer.#comments.forEach(function(val){
-                let li = document.createElement('li');
-                let username = document.createElement('p');
-                let content = document.createElement('p');
-                li.className = "list-group-item";
-                username.innerText = `Username: ${val.username}`;
-                content.innerText = `${val.content}`;
-                li.appendChild(username);
-                li.appendChild(content);
-                //if(val.username === USERNAME)
-                    li.appendChild(imagePointer.#getDelButton(val.id));
-                comments.appendChild(li);
-            })
-            comments.appendChild(this.#getCommentButton());
-            comments.appendChild(this.#getCommentTextField());
-            return comments;
+        #getCommentsElement(){
+            let ans = document.createElement('div')
+            ans.className = `col-12 ${this.#displayComments ? "": "d-none"}`
+            ans.id= `${this.#data.date}-show-comments`
+            this.#commentsElement = document.createElement('ol');
+            this.#commentsElement.className = `list-group container`;
+            this.#commentsElement.id = `${this.#data.date}-show-all-comments`;
+            ans.appendChild(this.#commentsElement)
+            ans.appendChild(this.#getCommentButton());
+            ans.appendChild(this.#getCommentTextField());
+            return ans;
         }
 
         /**
          * This method creates and returns a button for the user to delete his comments
          * @param id
-         * @returns {HTMLButtonElement}
+         * @returns {HTMLDivElement}
          */
         #getDelButton(id){
+            let buttonDiv = document.createElement("div")
+            buttonDiv.className = "col-12 me-auto mt-2"
             let button = document.createElement('button');
-            button.className = "btn btn-primary delete-comment";
+            button.className = "btn btn-secondary delete-comment ";
             button.innerText = "Delete";
             button.id = `${this.#data.date}-${id}-del-button`;
             button.addEventListener("click", (event)=>{
@@ -644,13 +667,9 @@
                 //     this.updateComments();
                 // });
             });
-
-            return button;
+            buttonDiv.appendChild(button)
+            return buttonDiv;
         }
-
-        /**
-         * This function updates the feed so the user will see the last updates
-         */
         updateComments(){
             let params = new URLSearchParams()
             params.append("images",`["${this.#data.date}"]`)
@@ -666,16 +685,293 @@
             // });
 
         }
-        handleCommentsUpdateResponse(comments){
-            this.#comments = comments;
-            document.getElementById(`${this.#data.date}-post`).innerHTML = "";
-            document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
-            this.#lastUpdate = Date.now();
-        }
+        // handleCommentsUpdateResponse(comments){
+        //     this.#comments = comments;
+        //     document.getElementById(`${this.#data.date}-post`).innerHTML = "";
+        //     document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
+        //     this.#lastUpdate = Date.now();
+        // }
 
         getLastUpdate(){
             return this.#lastUpdate;
         }
     }
+    // class Image{
+    //     #lastUpdate
+    //     #date
+    //     #data
+    //     #comments = []
+    //     #displayComments
+    //     constructor(item, comments = []) {
+    //         this.#lastUpdate = 0
+    //         this.#date = item.date;
+    //         this.#data = item;
+    //         this.#displayComments = false;
+    //         this.#comments = comments;
+    //     }
+    //
+    //     setComments(comments){
+    //         //this will be change, we want to delete comments from don and insert new one
+    //
+    //     }
+    //     /**
+    //      * The method returns the image HTML element.
+    //      * @returns {HTMLLIElement} The image's html.
+    //      */
+    //     getHtml(){
+    //         let ans = document.createElement('li');
+    //         ans.className = "list-group-item";
+    //         ans.id = `${this.#data.date}-post`;
+    //         ans.appendChild(this.#generateHtml());
+    //         return ans;
+    //     }
+    //
+    //     /**
+    //      * The method generates or regenerates the image's html element.
+    //      */
+    //     #generateHtml(){
+    //         let row = document.createElement("div");
+    //         row.className = "row";
+    //         row.appendChild(this.#getName());
+    //         row.appendChild(this.#getImage());
+    //         row.appendChild(this.#getInfo());
+    //         row.appendChild(this.#getComments());
+    //         row.appendChild(this.#getShowComments());
+    //         return row;
+    //     }
+    //     /**
+    //      * The method returns the images date (by the NASA api).
+    //      * @returns {string}
+    //      */
+    //     getDate(){
+    //         return this.#data.date;
+    //     }
+    //
+    //     /**
+    //      * This method creates and returns an h3 element with the title of the data
+    //      * @returns {HTMLHeadingElement}
+    //      */
+    //     #getName(){
+    //         let title = document.createElement("h3");
+    //         title.innerText = this.#data.title;
+    //         title.className = "col-12";
+    //         return title;
+    //     }
+    //
+    //     /**
+    //      * This method creates and returns an image or iframe element depends on the data media type
+    //      * @returns {HTMLImageElement}
+    //      */
+    //     #getImage(){
+    //         let ans = document.createElement(`${(this.#data.media_type === "video") ? "iframe": "img"}`)
+    //         ans.src = this.#data.url;
+    //         ans.alt = "";
+    //         ans.className = "img-fluid col-6 nasa-images";
+    //         return ans;
+    //     }
+    //
+    //     /**
+    //      * This method creates and returns an p element with the title of the data
+    //      * @returns {HTMLParagraphElement}
+    //      */
+    //     #getInfo(){
+    //         let ans = document.createElement("div");
+    //         ans.className = "col";
+    //         let row = document.createElement("div");
+    //         row.className = "row"
+    //         let firstCol = document.createElement("div")
+    //         firstCol.className = "col-12"
+    //         firstCol.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"} Date: ${this.#data.date}`
+    //         let secondCol = document.createElement("div")
+    //         secondCol.className = "col-12"
+    //         secondCol.innerText = `Explanation: ${this.#data.explanation ?? ""}`
+    //         //ans.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"}\nDate: ${this.#data.date}\nExplanation: ${this.#data.explanation}\n`;
+    //         row.appendChild(firstCol)
+    //         row.appendChild(secondCol)
+    //         ans.appendChild(row)
+    //         return ans;
+    //     }
+    //
+    //     /**
+    //      * This method creates and returns a button element allowing the user to click and add a comment
+    //      * @returns {HTMLLIElement}
+    //      */
+    //     #getCommentButton(){
+    //         let li = document.createElement("li");
+    //         li.className = "list-group-item";
+    //         let commentButton = document.createElement('button');
+    //         commentButton.className = "comment-button btn btn-primary"
+    //         commentButton.innerText = 'Comment';
+    //         commentButton.id = `${this.#data.date}-comment_button`;
+    //         commentButton.addEventListener("click", (event)=>{
+    //             document.getElementById(`${this.#data.date}-comment_button`).classList.add("d-none")
+    //             document.getElementById(`${this.#data.date}-div`).classList.toggle("d-none")
+    //             //showAndHide(`${this.#data.date}-comment_button`, "hide");
+    //             //showAndHide(`${this.#data.date}-div`, "toggle");
+    //         });
+    //         li.appendChild(commentButton);
+    //         return li;
+    //     }
+    //
+    //     /**
+    //      * This method creates and returns a button element allowing the user to click and add a comment
+    //      * @returns {HTMLLIElement}
+    //      */
+    //     #getSendCommentButton(){
+    //         let li = document.createElement("li");
+    //         li.className = "list-group-item";
+    //         let button = document.createElement("button");
+    //         button.className ="input-group-text send-comment-button btn btn-primary";
+    //         button.innerText = "Send Comment";
+    //         button.addEventListener("click", (event)=> {
+    //             if (sendCommentValid(`${this.#data.date}-text-area`)) {
+    //                 let message = {
+    //                     method: "POST",
+    //                     headers: {"Content-Type": "application/json"},
+    //                     body: JSON.stringify({
+    //                         "picDate": this.#data.date,
+    //                         "content": document.getElementById(`${this.#data.date}-text-area`).value
+    //                     })
+    //                 }
+    //                 fetchRequest(`${COMMENTS_SERVER_URL}`, responseToChangeComments,this, message)
+    //                 // fetch("/home/api", {
+    //                 //     method: "POST",
+    //                 //     headers: {"Content-Type": "application/json"},
+    //                 //     body: JSON.stringify({
+    //                 //         "picDate": this.#data.date,
+    //                 //         "content": document.getElementById(`${this.#data.date}-text-area`).value
+    //                 //     })
+    //                 // }).then((res)=>{
+    //                 //     this.updateComments();
+    //                 // });
+    //             }
+    //         });
+    //         li.appendChild(button);
+    //         return li;
+    //     }
+    //
+    //
+    //     /**
+    //      * This method creates and returns a textarea element for the user to write a comment in
+    //      * @returns {HTMLDivElement}
+    //      */
+    //     #getCommentTextField(){
+    //         let div = document.createElement('div');
+    //         let textArea = document.createElement("textarea");
+    //         //div.className = "input-group";
+    //         div.className = "input-group d-none";
+    //         div.id = `${this.#data.date}-div`;
+    //         //div.style = "display: none";
+    //         textArea.className = "col-12";
+    //         textArea.ariaLabel= "With textarea";
+    //         textArea.maxLength = "128";
+    //         textArea.id = `${this.#data.date}-text-area`;
+    //         div.appendChild(textArea);
+    //         div.appendChild(this.#getSendCommentButton());
+    //         return div;
+    //     }
+    //
+    //     /**
+    //      * This method creates and returns a button for the user to clikc when he wants to see the comments
+    //      * @returns {HTMLButtonElement}
+    //      */
+    //     #getShowComments(){
+    //         let showComments = document.createElement("button");
+    //         showComments.innerText = "Show Comments";
+    //         showComments.id = `${this.#data.date}-show`;
+    //         showComments.className = 'btn btn-primary col-12 my-2';
+    //         showComments.addEventListener("click", (event)=>{
+    //             this.#displayComments = !this.#displayComments;
+    //             //showAndHide(`${event.target.id}-comments`, "toggle");
+    //             document.getElementById(`${event.target.id}-comments`).classList.toggle("d-none")
+    //             showComments.innerText = this.#displayComments ? 'Hide Comments' : 'Show Comments';
+    //         });
+    //         return showComments
+    //     }
+    //
+    //     /**
+    //      * This method creates and returns a ol of all the comments we have in the data for each image
+    //      * returning it with the username and content data.
+    //      * @returns {HTMLOListElement}
+    //      */
+    //     #getComments(){
+    //         let comments = document.createElement('ol');
+    //         //comments.className = "list-group col-12";
+    //         comments.className = `list-group col-12 ${this.#displayComments ? "": "d-none"}`;
+    //         comments.id = `${this.#data.date}-show-comments`;
+    //         // comments.style.display = this.#displayComments ? "block" : "none";
+    //         const imagePointer = this;
+    //         imagePointer.#comments.forEach(function(val){
+    //             let li = document.createElement('li');
+    //             let username = document.createElement('p');
+    //             let content = document.createElement('p');
+    //             li.className = "list-group-item";
+    //             username.innerText = `Username: ${val.username}`;
+    //             content.innerText = `${val.content}`;
+    //             li.appendChild(username);
+    //             li.appendChild(content);
+    //             //if(val.username === USERNAME)
+    //                 li.appendChild(imagePointer.#getDelButton(val.id));
+    //             comments.appendChild(li);
+    //         })
+    //         comments.appendChild(this.#getCommentButton());
+    //         comments.appendChild(this.#getCommentTextField());
+    //         return comments;
+    //     }
+    //
+    //     /**
+    //      * This method creates and returns a button for the user to delete his comments
+    //      * @param id
+    //      * @returns {HTMLButtonElement}
+    //      */
+    //     #getDelButton(id){
+    //         let button = document.createElement('button');
+    //         button.className = "btn btn-primary delete-comment";
+    //         button.innerText = "Delete";
+    //         button.id = `${this.#data.date}-${id}-del-button`;
+    //         button.addEventListener("click", (event)=>{
+    //             let params = new URLSearchParams();
+    //             params.append("id", id.toString())
+    //             let message = {method:"DELETE"}
+    //             fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,responseToChangeComments,this,message)
+    //             // fetch(`/home/api?${params.toString()}`, {
+    //             //     method: "DELETE"
+    //             // }).then((event)=>{
+    //             //     this.updateComments();
+    //             // });
+    //         });
+    //
+    //         return button;
+    //     }
+    //
+    //     /**
+    //      * This function updates the feed so the user will see the last updates
+    //      */
+    //     updateComments(){
+    //         let params = new URLSearchParams()
+    //         params.append("images",`["${this.#data.date}"]`)
+    //         fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,handleCommentsUpdateResponse, this)
+    //         // fetch(`/home/api?images=["${this.#data.date}"]`)
+    //         //     .then((response)=>{
+    //         //         return response.json();
+    //         //     }).then((comments)=>{
+    //         //         this.#comments = comments;
+    //         //         document.getElementById(`${this.#data.date}-post`).innerHTML = "";
+    //         //         document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
+    //         //         this.#lastUpdate = Date.now();
+    //         // });
+    //
+    //     }
+    //     handleCommentsUpdateResponse(comments){
+    //         this.#comments = comments;
+    //         document.getElementById(`${this.#data.date}-post`).innerHTML = "";
+    //         document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
+    //         this.#lastUpdate = Date.now();
+    //     }
+    //
+    //     getLastUpdate(){
+    //         return this.#lastUpdate;
+    //     }
+    // }
 
 })();
