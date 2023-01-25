@@ -245,7 +245,7 @@
 
     function handleNasaResponse(data){
         validateNasaResponse(data)
-        //create here images without comments
+        //create here images without comments and display them
         let params = new URLSearchParams()
         //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
         params.append("images",`[${getPicsDates(data).toString()}]`)
@@ -260,72 +260,74 @@
     //will split to new function - one for new images and one for new comments
     function buildImages(comments, imagesData){
         //validate comments here
+        let newImages = []
         imagesData.forEach(function(item){
 
-            IMAGES.push(new Image(item, getImageComments(comments, item.date)));
+            newImages.push(new Image(item, getImageComments(comments, item.date)));
         });
         //will be moved to the create images function.
-        IMAGES.sort((a,b)=>{
+        newImages.sort((a,b)=>{
             return b.getDate().toString().localeCompare(a.getDate().toString());
         });
-        IMAGES.forEach(function (image){
+        newImages.forEach(function (image){
             CONTENT_ELEMENT.appendChild(image.getHtml());
         })
+        IMAGES.push([...newImages])
         SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
     }
 
     function validateComments(comments){
 
     }
-
-    /**
-     * The function fetch from NASA api the images links and displays it on the screen.
-     * @param end The date of the most old pictures wanted to be displayed.
-     * @param url The nasa url.
-     * @param newPage Parameter that tells the function if the page need to be regenerated.
-     */
-    function fetchData(end, url, newPage=true){
-        SPINNER_BACKGROUND_ELEMENT.classList.remove("d-none")
-        const newDate = new Date(end);
-        newDate.setDate(newDate.getDate() - IMAGES_TO_FETCH + 1);
-        let start = newDate.toISOString().substring(0,10);
-        const newStartDate = new Date(start);
-        newStartDate.setDate(newStartDate.getDate() - 1);
-        currStartDate = newStartDate.toISOString().substring(0,10);
-        fetch(`${url}?api_key=${APIKEY}&start_date=${start}&end_date=${end}`)
-            .then(function(response) {
-                return response.json();
-            }).then(function (data) {
-            fetch(`/home/api?images=[${getPicsDates(data).toString()}]`)
-                .then(function (comments) {
-                    return comments.json();
-                }).then(function (comments){
-                    //console.log(comments);
-                let content = document.getElementById("content-list");
-                if(newPage) {
-                    IMAGES = [];
-                }
-                content.innerHTML = "";
-                data.forEach(function(item){
-                    console.log("here");
-                    IMAGES.push(new Image(item, getImageComments(comments, item.date)));
-                });
-                IMAGES.sort((a,b)=>{
-                    return b.getDate().toString().localeCompare(a.getDate().toString());
-                });
-                IMAGES.forEach(function (image){
-                    content.appendChild(image.getHtml());
-                })
-                //showAndHide("show-more-button", "show");
-                SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
-            })
-        }).catch(error =>{
-            //showAndHide("show-more-button", "hide");
-            SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
-            console.log("ERRORRRRRRR");
-        })
-            .finally(()=>{SPINNER_BACKGROUND_ELEMENT.classList.add("d-none")});
-    }
+    //
+    // /**
+    //  * The function fetch from NASA api the images links and displays it on the screen.
+    //  * @param end The date of the most old pictures wanted to be displayed.
+    //  * @param url The nasa url.
+    //  * @param newPage Parameter that tells the function if the page need to be regenerated.
+    //  */
+    // function fetchData(end, url, newPage=true){
+    //     SPINNER_BACKGROUND_ELEMENT.classList.remove("d-none")
+    //     const newDate = new Date(end);
+    //     newDate.setDate(newDate.getDate() - IMAGES_TO_FETCH + 1);
+    //     let start = newDate.toISOString().substring(0,10);
+    //     const newStartDate = new Date(start);
+    //     newStartDate.setDate(newStartDate.getDate() - 1);
+    //     currStartDate = newStartDate.toISOString().substring(0,10);
+    //     fetch(`${url}?api_key=${APIKEY}&start_date=${start}&end_date=${end}`)
+    //         .then(function(response) {
+    //             return response.json();
+    //         }).then(function (data) {
+    //         fetch(`/home/api?images=[${getPicsDates(data).toString()}]`)
+    //             .then(function (comments) {
+    //                 return comments.json();
+    //             }).then(function (comments){
+    //                 //console.log(comments);
+    //             let content = document.getElementById("content-list");
+    //             if(newPage) {
+    //                 IMAGES = [];
+    //             }
+    //             content.innerHTML = "";
+    //             data.forEach(function(item){
+    //                 console.log("here");
+    //                 IMAGES.push(new Image(item, getImageComments(comments, item.date)));
+    //             });
+    //             IMAGES.sort((a,b)=>{
+    //                 return b.getDate().toString().localeCompare(a.getDate().toString());
+    //             });
+    //             IMAGES.forEach(function (image){
+    //                 content.appendChild(image.getHtml());
+    //             })
+    //             //showAndHide("show-more-button", "show");
+    //             SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
+    //         })
+    //     }).catch(error =>{
+    //         //showAndHide("show-more-button", "hide");
+    //         SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
+    //         console.log("ERRORRRRRRR");
+    //     })
+    //         .finally(()=>{SPINNER_BACKGROUND_ELEMENT.classList.add("d-none")});
+    // }
 
     /**
      *
@@ -344,15 +346,25 @@
      * The function gets from the server the time stamp of its last database modification.
      */
     function updateImages(){
-        fetch('home/api/timeStamp').then((response)=>{
-            return response.json();
-        }).then((version)=>{
-            IMAGES.forEach((image)=>{
-                if(parseInt(version["value"]) > image.getLastUpdate())
-                    image.updateComments();
-            });
-            TIMEOUT = setTimeout(updateImages, 15000);
+        fetchRequest(`${COMMENTS_SERVER_URL}/timeStamp`, handleUpdateResponse)
+        //moved to handleUpdateResponse
+        // fetch('home/api/timeStamp').then((response)=>{
+        //     return response.json();
+        // }).then((version)=>{
+        //     IMAGES.forEach((image)=>{
+        //         if(parseInt(version["value"]) > image.getLastUpdate())
+        //             image.updateComments();
+        //     });
+        //     TIMEOUT = setTimeout(updateImages, 15000);
+        // });
+    }
+
+    function handleUpdateResponse(version){
+        IMAGES.forEach((image)=>{
+            if(parseInt(version["value"]) > image.getLastUpdate())
+                image.updateComments();
         });
+        TIMEOUT = setTimeout(updateImages, 15000);
     }
 
 
@@ -383,16 +395,20 @@
         #lastUpdate
         #date
         #data
-        #comments
+        #comments = []
         #displayComments
         constructor(item, comments = []) {
             this.#lastUpdate = 0
             this.#date = item.date;
             this.#data = item;
-            this.#comments = comments;
             this.#displayComments = false;
+            this.#comments = comments;
         }
 
+        setComments(comments){
+            //this will be change, we want to delete comments from don and insert new one
+
+        }
         /**
          * The method returns the image HTML element.
          * @returns {HTMLLIElement} The image's html.
@@ -520,6 +536,8 @@
             li.appendChild(button);
             return li;
         }
+
+
         /**
          * This method creates and returns a textarea element for the user to write a comment in
          * @returns {HTMLDivElement}
@@ -615,39 +633,30 @@
          * This function updates the feed so the user will see the last updates
          */
         updateComments(){
-            fetch(`/home/api?images=["${this.#data.date}"]`)
-                .then((response)=>{
-                    return response.json();
-                }).then((comments)=>{
-                    this.#comments = comments;
-                    document.getElementById(`${this.#data.date}-post`).innerHTML = "";
-                    document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
-                    this.#lastUpdate = Date.now();
-            });
+            let params = new URLSearchParams()
+            params.append("images",`[${this.#data.date}]`)
+            fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,this.#handleCommentsUpdateResponse)
+            // fetch(`/home/api?images=["${this.#data.date}"]`)
+            //     .then((response)=>{
+            //         return response.json();
+            //     }).then((comments)=>{
+            //         this.#comments = comments;
+            //         document.getElementById(`${this.#data.date}-post`).innerHTML = "";
+            //         document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
+            //         this.#lastUpdate = Date.now();
+            // });
+
+        }
+
+        #handleCommentsUpdateResponse(comments){
+            this.#comments = comments;
+            document.getElementById(`${this.#data.date}-post`).innerHTML = "";
+            document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
+            this.#lastUpdate = Date.now();
         }
         getLastUpdate(){
             return this.#lastUpdate;
         }
     }
 
-    /**
-     * This function gets an id of which we want to toggle the display for.
-     * making an element to appear to be hidden. Also gets
-     * @param idName The element id.
-     * @param indicator The what to do with the element (show or hide).
-     */
-    function showAndHide(idName, indicator="") {
-        let x = document.getElementById(idName);
-        if (indicator === 'show'){
-            x.style.display = 'block';
-        }
-        else if (indicator === 'hide'){
-            x.style.display = 'none';
-        }
-        else if (x.style.display === 'none') {
-            x.style.display = 'block';
-        } else {
-            x.style.display = 'none';
-        }
-    }
 })();
