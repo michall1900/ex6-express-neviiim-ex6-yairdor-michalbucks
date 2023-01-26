@@ -20,7 +20,7 @@
      * This module is validates fields.
      * @type {{isValidItemId: (function(*)), isValidCommentsArray: (function(*)), isValidTimeStamp: (function(*)), isValidDate: (function(*)), isString: (function(*)), isValidURL: ((function(*): boolean)|*)}}
      */
-    const validateModule =(function(){
+    const validateModule = (function () {
         const PARAMS_IN_COMMENTS_ARRAY_RESULT = 2
 
         /**
@@ -28,7 +28,7 @@
          * @param string - any string
          * @returns {boolean} - True if the string is url, otherwise false.
          */
-        const isValidURL= (string)=>{
+        const isValidURL = (string) => {
             try {
                 new URL(string);
                 return true;
@@ -36,12 +36,13 @@
                 return false;
             }
         }
+
         /**
          * Receives an object (should be a string) and return if it is a date.
          * @param object - any object
          * @returns {boolean} - true if it is valid date, otherwise false.
          */
-        function isValidDate(object){
+        function isValidDate(object) {
 
             return ((!!object && isString(object) &&
                 object.toString().match(/\d{4}-\d{2}-\d{2}/)) && !!new Date(object))
@@ -53,7 +54,7 @@
          * @param object
          * @returns {boolean}
          */
-        const isString=(object)=>{
+        const isString = (object) => {
             return (object instanceof String || typeof (object) === "string")
         }
 
@@ -63,8 +64,8 @@
          * @param object
          * @returns {boolean}
          */
-        function isValidItemId(object){
-            return (!!object && isValidURL(object))
+        function isValidItemId(object) {
+            return (!!object && isValidDate(object))
         }
 
         /**
@@ -72,7 +73,7 @@
          * @param object
          * @returns {boolean}
          */
-        function isValidTimeStamp(object){
+        function isValidTimeStamp(object) {
             return (!!object && !isNaN(object) && Number.isInteger(object))
         }
 
@@ -81,8 +82,8 @@
          * @param object
          * @returns {false|this is *[]}
          */
-        function isValidCommentsArray(object){
-            return (!!object && object instanceof Array && object.every((currentVal)=>{
+        function isValidCommentsArray(object) {
+            return (!!object && object instanceof Array && object.every((currentVal) => {
                 return currentVal.length === PARAMS_IN_COMMENTS_ARRAY_RESULT && isValidTimeStamp(currentVal[0])
             }))
         }
@@ -106,18 +107,16 @@
         USER_DATE_ELEMENT = document.getElementById("pictureDate");
         CONTENT_ELEMENT = document.getElementById("content-list")
         const nasaFormElement = document.getElementById("dateForm");
-        nasaFormElement.addEventListener("submit", function(event){
-            //getData(event);
+        nasaFormElement.addEventListener("submit", function (event) {
             onChangeDate(event)
         })
-        SHOW_MORE_BUTTON_ELEMENT.addEventListener("click", function (){
-            //fetchData(currStartDate, NASA_API_URL, false);
+        SHOW_MORE_BUTTON_ELEMENT.addEventListener("click", function () {
             sendNasaRequests()
         })
 
         //Display current date.
         let todaysDate = new Date();
-        USER_DATE_ELEMENT.value = todaysDate.toISOString().substring(0,10);
+        USER_DATE_ELEMENT.value = todaysDate.toISOString().substring(0, 10);
 
         //Ask for the first time the feed page without user involved.
         const event = new Event("submit", {bubbles: true, cancelable: true});
@@ -125,24 +124,11 @@
     });
 
 
-    // /**
-    //  * The function load 5 more images from the nasa api and displays it.
-    //  * @param event click event parameter.
-    //  */
-    // function getData(event){
-    //     event.preventDefault();
-    //     let theurl = event.target.action;
-    //     let getDate = document.getElementById("pictureDate").value;
-    //     fetchData(getDate, theurl);
-    // }
-
-
     /**
      * The function is showing the error message to the user inside a modal.
-     * The assumption is the error argument is Error object.
      * @param error - Error object.
      */
-    function errorHandler(error){
+    function errorHandler(error) {
         // need to fix this function
         if (error.message) {
 
@@ -150,16 +136,12 @@
             if (status.includes("301") || status.includes("302")) {
                 //do redirect from client and display error message
                 return
+            } else {
+                MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${errorMsg??error}`
             }
-            else{
-                MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${errorMsg}`
-            }
+        } else {
+            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${error.message??error}`
         }
-        else{
-            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${error}`
-        }
-        // document.getElementById(ERROR_MESSAGE_SECTION_ID).innerHTML =
-        //     (error.message && error.message.includes("status"))?error.message: UNKNOWN_MESSAGE
         MODAL_ERROR_BUTTON_ELEMENT.click()
 
 
@@ -174,95 +156,99 @@
     async function status(response) {
         if (response.status >= MIN_OK_STATUS && response.status < MAX_OK_STATUS) {
             return response
-        }
-        else {
-            return response.text().then(text =>{
+        } else {
+            return response.text().then(text => {
                 throw new Error(`status: ${response.status} ,error: ${text}`)
             })
         }
     }
 
-    async function fetchRequest (url, responseHandler,dataForResHandler=undefined, request=undefined){
+    async function fetchRequest(url, responseHandler,spinnerId, dataForResHandler = undefined, request = undefined) {
         //there needs to be many spinners, for loading comments for adding comments.. it can't be just in full page
-        SPINNER_BACKGROUND_ELEMENT.classList.remove("d-none")
-        try{
+        let spinnerElem
+        if (spinnerId)
+            spinnerElem = document.getElementById(spinnerId)
+
+        if(spinnerElem)
+            spinnerElem.classList.remove("d-none")
+        try {
             let res = await fetch(url, request)
             await status(res)
             const data = await res.json()
-            responseHandler(data,dataForResHandler)
-        }
-        catch(err) {
+            responseHandler(data, dataForResHandler)
+        } catch (err) {
             SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
             errorHandler(err)
         }
-        SPINNER_BACKGROUND_ELEMENT.classList.add("d-none")
+        if(spinnerElem)
+            spinnerElem.classList.add("d-none")
     }
 
-    function onChangeDate (event){
+    function onChangeDate(event) {
         event.preventDefault();
         //think about moving it somewhere else
-        if (validateModule.isValidDate(USER_DATE_ELEMENT.value)){
+        if (validateModule.isValidDate(USER_DATE_ELEMENT.value)) {
             currStartDate = USER_DATE_ELEMENT.value;
             CONTENT_ELEMENT.innerHTML = "";
             IMAGES = [];
             sendNasaRequests()
-        }
-        else{
+        } else {
             errorHandler(new Error("Error, you picked invalid date"))
         }
     }
-    function sendNasaRequests(){
+
+    function sendNasaRequests() {
         const newDate = new Date(currStartDate);
         newDate.setDate(newDate.getDate() - IMAGES_TO_FETCH + 1);
-        const start = newDate.toISOString().substring(0,10);
+        const start = newDate.toISOString().substring(0, 10);
         const newStartDate = new Date(start);
         newStartDate.setDate(newStartDate.getDate() - 1);
         let params = new URLSearchParams()
         params.append("api_key", `${APIKEY}`)
         params.append("start_date", `${start}`)
         params.append("end_date", `${currStartDate}`)
-        fetchRequest(`${NASA_API_URL}?${params.toString()}`,handleNasaResponse)
-        currStartDate = newStartDate.toISOString().substring(0,10);
+        fetchRequest(`${NASA_API_URL}?${params.toString()}` ,handleNasaResponse, SPINNER_BACKGROUND_CLASS_NAME)
+        currStartDate = newStartDate.toISOString().substring(0, 10);
     }
 
-    function handleNasaResponse(data){
+    function handleNasaResponse(data) {
         validateNasaResponse(data)
-        //create here images without comments and display them
         let newImages = []
-        data.forEach(function(item){
+        data.forEach(function (item) {
             newImages.push(new Image(item));
         });
-        newImages.sort((a,b)=>{
+        newImages.sort((a, b) => {
             return b.getDate().toString().localeCompare(a.getDate().toString());
         });
-        newImages.forEach(function (image){
+        newImages.forEach(function (image) {
             CONTENT_ELEMENT.appendChild(image.getImageHtml());
         })
         let startIndex = IMAGES.length
         IMAGES.push(...newImages)
         let params = new URLSearchParams()
-
         //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
-        params.append("images",`[${getPicsDates(data).toString()}]`)
-        fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,buildImages,startIndex)
+        params.append("images", `[${getPicsDates(data).toString()}]`)
+        fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,buildImages,SPINNER_BACKGROUND_CLASS_NAME, startIndex)
         SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
     }
 
-    function validateNasaResponse(data){
+    function validateNasaResponse(data) {
         if (!data || !(data instanceof Array) || !data.length ||
-            !data.every((element)=>validateModule.isValidURL(element.url) && validateModule.isValidDate(element.date)))
+            !data.every((element) => validateModule.isValidURL(element.url) && validateModule.isValidDate(element.date)))
             throw (new Error("Error occurred while getting Nasa response"))
     }
 
-    function buildImages(comments, startIndex){
-        //needs to validate comments
+    function buildImages(comments, startIndex) {
         //validateComments(comments)
-        IMAGES.slice(startIndex).forEach((img)=>{img.setComments(getImageComments(comments, img.getDate()))})
+        IMAGES.slice(startIndex).forEach((img) => {
+            img.setComments(getImageComments(comments, img.getDate()))
+        })
     }
 
-    function validateComments(comments){
+    function validateComments(comments) {
 
     }
+
     //
     // /**
     //  * The function fetch from NASA api the images links and displays it on the screen.
@@ -316,10 +302,10 @@
     /**
      *
      */
-    function getImageComments(comments, date){
+    function getImageComments(comments, date) {
         let imageComments = [];
-        comments.forEach(function(comment){
-            if (comment.picDate === date){
+        comments.forEach(function (comment) {
+            if (comment.picDate === date) {
                 imageComments.push(comment);
             }
         })
@@ -329,24 +315,14 @@
     /**
      * The function gets from the server the time stamp of its last database modification.
      */
-    function updateImages(){
+    function updateImages() {
         fetchRequest(`${COMMENTS_SERVER_URL}/timeStamp`, handleUpdateResponse)
-        //moved to handleUpdateResponse
-        // fetch('home/api/timeStamp').then((response)=>{
-        //     return response.json();
-        // }).then((version)=>{
-        //     IMAGES.forEach((image)=>{
-        //         if(parseInt(version["value"]) > image.getLastUpdate())
-        //             image.updateComments();
-        //     });
-        //     TIMEOUT = setTimeout(updateImages, 15000);
-        // });
     }
 
-    function handleUpdateResponse(version){
+    function handleUpdateResponse(version) {
         //should validate returned version format and check for value
-        IMAGES.forEach((image)=>{
-            if(parseInt(version["value"]) > image.getLastUpdate())
+        IMAGES.forEach((image) => {
+            if (parseInt(version["value"]) > image.getLastUpdate())
                 image.updateComments();
         });
         TIMEOUT = setTimeout(updateImages, 15000);
@@ -358,9 +334,9 @@
      * @param data The NASA response.
      * @returns {*[]} A list of the pictures Dates.
      */
-    function getPicsDates(data){
+    function getPicsDates(data) {
         let pics = [];
-        data.forEach(function(pic){
+        data.forEach(function (pic) {
             pics.push(`"${pic.date}"`);
         });
         return pics;
@@ -371,15 +347,16 @@
      * @param id The comment id.
      * @returns {boolean} If the typed comment is not empty.
      */
-    function sendCommentValid(id){
+    function sendCommentValid(id) {
         let content = document.getElementById(id).value;
         return content.trim().length > 0;
     }
-    function handleCommentsUpdateResponse(comments, currentImage){
+
+    function handleCommentsUpdateResponse(comments, currentImage) {
         currentImage.setComments(comments)
     }
 
-    function responseToChangeComments(_,currentImage){
+    function responseToChangeComments(_, currentImage) {
         currentImage.updateComments()
     }
 
@@ -391,6 +368,7 @@
         #displayComments
         #imageHtml
         #commentsElement
+
         constructor(item) {
             this.#lastUpdate = 0
             this.#date = item.date;
@@ -398,7 +376,7 @@
             this.#displayComments = false;
         }
 
-        setComments(comments){
+        setComments(comments) {
             //this will be change, we want to delete comments from dom and insert new one into it
 
             //easy way - don't delete from dom directly, but delete all the comments that should be deleted and
@@ -411,7 +389,7 @@
             this.#lastUpdate = Date.now();
         }
 
-        getImageHtml(){
+        getImageHtml() {
             if (!this.#imageHtml)
                 this.#initializePictureHtml()
             return this.#imageHtml
@@ -421,25 +399,26 @@
          * The method returns the images date (by the NASA api).
          * @returns {string}
          */
-        getDate(){
+        getDate() {
             return this.#data.date;
         }
 
-        #setHtmlComments(newComments){
+        #setHtmlComments(newComments) {
             this.#commentsElement.innerText = ""
             const imagePointer = this;
-            newComments.forEach(function(val){
+            newComments.forEach(function (val) {
                 let li = document.createElement('li');
                 li.className = "list-group-item mt-2 bg-light border-5 border-white";
                 let div = document.createElement("div")
-                div.className = "row"
+                div.className = "row align-items-center"
                 div.appendChild(imagePointer.#getUserDataCol(val))
                 div.appendChild(imagePointer.#getContentAndDeleteCol(val))
                 li.appendChild(div)
                 imagePointer.#commentsElement.appendChild(li);
             })
         }
-        #getUserDataCol(val){
+
+        #getUserDataCol(val) {
             let usersDataCol = document.createElement('div');
             usersDataCol.className = "col-12 col-lg-3 col-xl-2"
             let username = document.createElement('div');
@@ -448,25 +427,24 @@
             usersDataCol.appendChild(username)
             return usersDataCol
         }
-        #getContentAndDeleteCol(val){
+
+        #getContentAndDeleteCol(val) {
             let contentAndDeleteCol = document.createElement('div');
             contentAndDeleteCol.className = "col-12 col-lg-9 col-xl-10"
             let contentDiv = document.createElement('div')
-            contentDiv.className = "row"
+            contentDiv.className = "row align-items-center"
             let content = document.createElement('div');
-            content.className = "col-12 text-body text-break text-body"
+            content.className = "col-10 text-body text-break text-body "
             content.innerText = `${val.content}`;
             contentDiv.appendChild(content)
             //if(val.username === USERNAME){
-                let deleteDiv = document.createElement('div');
-                deleteDiv.className = "col-12 text-body text-break text-body"
-                deleteDiv.appendChild(this.#getDelButton(val.id));
-                contentDiv.appendChild(deleteDiv)
+                contentDiv.appendChild(this.#getDelButton(val.id))
             //}
             contentAndDeleteCol.appendChild(contentDiv)
             return contentAndDeleteCol
         }
-        #initializePictureHtml(){
+
+        #initializePictureHtml() {
             this.#imageHtml = document.createElement('li');
             this.#imageHtml.className = "list-group-item";
             this.#imageHtml.id = `${this.#data.date}-post`;
@@ -477,16 +455,17 @@
             imageRow.appendChild(this.#getInfo());
             this.#imageHtml.appendChild(imageRow);
             let commentsRow = document.createElement("div")
-            commentsRow.className ="row"
+            commentsRow.className = "row"
             commentsRow.appendChild(this.#getCommentsElement());
             commentsRow.appendChild(this.#getShowComments());
             this.#imageHtml.appendChild(commentsRow);
         }
+
         /**
          * This method creates and returns an h3 element with the title of the data
          * @returns {HTMLHeadingElement}
          */
-        #getName(){
+        #getName() {
             let title = document.createElement("h3");
             title.innerText = this.#data.title;
             title.className = "col-12";
@@ -497,8 +476,8 @@
          * This method creates and returns an image or iframe element depends on the data media type
          * @returns {HTMLImageElement}
          */
-        #getImage(){
-            let ans = document.createElement(`${(this.#data.media_type === "video") ? "iframe": "img"}`)
+        #getImage() {
+            let ans = document.createElement(`${(this.#data.media_type === "video") ? "iframe" : "img"}`)
             ans.src = this.#data.url;
             ans.alt = "";
             ans.className = "img-fluid col-6 nasa-images";
@@ -509,19 +488,23 @@
          * This method creates and returns an p element with the title of the data
          * @returns {HTMLDivElement}
          */
-        #getInfo(){
+        #getInfo() {
             let ans = document.createElement("div");
             ans.className = "col";
             let row = document.createElement("div");
             row.className = "row"
             let firstCol = document.createElement("div")
             firstCol.className = "col-12 text-break"
-            firstCol.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"} Date: ${this.#data.date}`
+            firstCol.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"}`
             let secondCol = document.createElement("div")
-            secondCol.className = "col-12 my-2 text-break fs-5"
-            secondCol.innerText = `Explanation: ${this.#data.explanation ?? ""}`
+            firstCol.className = "col-12 text-break"
+            secondCol.innerText = `Date: ${this.#data.date}`
+            let thirdCol = document.createElement("div")
+            thirdCol.className = "col-12 my-2 text-break text-body"
+            thirdCol.innerText = `Explanation: ${this.#data.explanation ?? ""}`
             row.appendChild(firstCol)
             row.appendChild(secondCol)
+            row.appendChild(thirdCol)
             ans.appendChild(row)
             return ans;
         }
@@ -530,16 +513,16 @@
          * This method creates and returns a button element allowing the user to click and add a comment
          * @returns {HTMLDivElement}
          */
-        #getCommentButton(){
+        #getCommentButton() {
             let row = document.createElement("div");
             row.className = "row mt-2";
-            row.id=`${this.#data.date}-comment_button`
+            row.id = `${this.#data.date}-comment_button`
             let col = document.createElement("col")
-            col.className="col"
+            col.className = "col"
             let commentButton = document.createElement('button');
             commentButton.className = "comment-button btn btn-primary "
             commentButton.innerText = 'Comment';
-            commentButton.addEventListener("click", (event)=>{
+            commentButton.addEventListener("click", (event) => {
                 document.getElementById(`${this.#data.date}-comment_button`).classList.add("d-none")
                 document.getElementById(`${this.#data.date}-div`).classList.toggle("d-none")
             });
@@ -552,13 +535,13 @@
          * This method creates and returns a button element allowing the user to click and add a comment
          * @returns {HTMLDivElement}
          */
-        #getSendCommentButton(){
+        #getSendCommentButton() {
             let div = document.createElement("div");
             div.className = "col mt-2";
             let button = document.createElement("button");
-            button.className ="input-group-text send-comment-button btn btn-primary";
+            button.className = "input-group-text send-comment-button btn btn-primary";
             button.innerText = "Send Comment";
-            button.addEventListener("click", (event)=> {
+            button.addEventListener("click", (event) => {
                 if (sendCommentValid(`${this.#data.date}-text-area`)) {
                     let message = {
                         method: "POST",
@@ -568,21 +551,14 @@
                             "content": document.getElementById(`${this.#data.date}-text-area`).value
                         })
                     }
-                    document.getElementById(`${this.#data.date}-text-area`).value =""
+                    document.getElementById(`${this.#data.date}-text-area`).value = ""
                     document.getElementById(`${this.#data.date}-div`).classList.add("d-none")
                     document.getElementById(`${this.#data.date}-comment_button`).classList.remove("d-none")
 
-                    fetchRequest(`${COMMENTS_SERVER_URL}`, responseToChangeComments,this, message)
-                    // fetch("/home/api", {
-                    //     method: "POST",
-                    //     headers: {"Content-Type": "application/json"},
-                    //     body: JSON.stringify({
-                    //         "picDate": this.#data.date,
-                    //         "content": document.getElementById(`${this.#data.date}-text-area`).value
-                    //     })
-                    // }).then((res)=>{
-                    //     this.updateComments();
-                    // });
+                    fetchRequest(`${COMMENTS_SERVER_URL}`, responseToChangeComments,`${this.#data.date}-spinner`, this, message)
+                }
+                else{
+                    errorHandler(new Error("Invalid comment content. Comment couldn't be empty or bigger than 128 characters"))
                 }
             });
             div.appendChild(button);
@@ -594,13 +570,13 @@
          * This method creates and returns a textarea element for the user to write a comment in
          * @returns {HTMLDivElement}
          */
-        #getCommentTextField(){
+        #getCommentTextField() {
             let div = document.createElement('div');
             let textArea = document.createElement("textarea");
             div.className = "row mt-2 d-none";
             div.id = `${this.#data.date}-div`;
             textArea.className = "col-12 border-dark";
-            textArea.ariaLabel= "With textarea";
+            textArea.ariaLabel = "With textarea";
             textArea.maxLength = 128;
             textArea.minLength = 1;
             textArea.id = `${this.#data.date}-text-area`;
@@ -613,12 +589,12 @@
          * This method creates and returns a button for the user to clikc when he wants to see the comments
          * @returns {HTMLButtonElement}
          */
-        #getShowComments(){
+        #getShowComments() {
             let showComments = document.createElement("button");
             showComments.innerText = "Show Comments";
             showComments.id = `${this.#data.date}-show`;
             showComments.className = 'btn btn-primary col-12 my-2';
-            showComments.addEventListener("click", (event)=>{
+            showComments.addEventListener("click", (event) => {
                 this.#displayComments = !this.#displayComments;
                 document.getElementById(`${event.target.id}-comments`).classList.toggle("d-none")
                 showComments.innerText = this.#displayComments ? 'Hide Comments' : 'Show Comments';
@@ -631,347 +607,59 @@
          * returning it with the username and content data.
          * @returns {HTMLOListElement}
          */
-        #getCommentsElement(){
+        #getCommentsElement() {
             let ans = document.createElement('div')
-            ans.className = `col-12 ${this.#displayComments ? "": "d-none"}`
-            ans.id= `${this.#data.date}-show-comments`
+            ans.className = `col-12 ${this.#displayComments ? "" : "d-none"}`
+            ans.id = `${this.#data.date}-show-comments`
             this.#commentsElement = document.createElement('ol');
             this.#commentsElement.className = `list-group container`;
             this.#commentsElement.id = `${this.#data.date}-show-all-comments`;
             ans.appendChild(this.#commentsElement)
+            ans.appendChild(this.#getSpinner())
             ans.appendChild(this.#getCommentButton());
             ans.appendChild(this.#getCommentTextField());
             return ans;
         }
 
+        #getSpinner(){
+            const div = document.createElement("div")
+            div.className = "text-align d-none"
+            div.id = `${this.#data.date}-spinner`
+            const spinner = document.createElement("div")
+            spinner.className="spinner-border"
+            div.appendChild(spinner)
+            return div
+        }
         /**
          * This method creates and returns a button for the user to delete his comments
          * @param id
          * @returns {HTMLDivElement}
          */
-        #getDelButton(id){
+        #getDelButton(id) {
             let buttonDiv = document.createElement("div")
-            buttonDiv.className = "col-12 me-auto mt-2"
+            buttonDiv.className = "col-2 me-auto mt-2"
             let button = document.createElement('button');
             button.className = "btn btn-secondary delete-comment ";
             button.innerText = "Delete";
             button.id = `${this.#data.date}-${id}-del-button`;
-            button.addEventListener("click", (event)=>{
+            button.addEventListener("click", (event) => {
                 let params = new URLSearchParams();
                 params.append("id", id.toString())
-                let message = {method:"DELETE"}
-                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,responseToChangeComments,this,message)
-                // fetch(`/home/api?${params.toString()}`, {
-                //     method: "DELETE"
-                // }).then((event)=>{
-                //     this.updateComments();
-                // });
+                let message = {method: "DELETE"}
+                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`, responseToChangeComments, `${this.#data.date}-spinner`, this, message)
             });
             buttonDiv.appendChild(button)
             return buttonDiv;
         }
-        updateComments(){
+
+        updateComments() {
             let params = new URLSearchParams()
-            params.append("images",`["${this.#data.date}"]`)
-            fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,handleCommentsUpdateResponse, this)
-            // fetch(`/home/api?images=["${this.#data.date}"]`)
-            //     .then((response)=>{
-            //         return response.json();
-            //     }).then((comments)=>{
-            //         this.#comments = comments;
-            //         document.getElementById(`${this.#data.date}-post`).innerHTML = "";
-            //         document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
-            //         this.#lastUpdate = Date.now();
-            // });
-
+            params.append("images", `["${this.#data.date}"]`)
+            fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`, handleCommentsUpdateResponse,`${this.#data.date}-spinner`, this)
         }
-        // handleCommentsUpdateResponse(comments){
-        //     this.#comments = comments;
-        //     document.getElementById(`${this.#data.date}-post`).innerHTML = "";
-        //     document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
-        //     this.#lastUpdate = Date.now();
-        // }
 
-        getLastUpdate(){
+        getLastUpdate() {
             return this.#lastUpdate;
         }
     }
-    // class Image{
-    //     #lastUpdate
-    //     #date
-    //     #data
-    //     #comments = []
-    //     #displayComments
-    //     constructor(item, comments = []) {
-    //         this.#lastUpdate = 0
-    //         this.#date = item.date;
-    //         this.#data = item;
-    //         this.#displayComments = false;
-    //         this.#comments = comments;
-    //     }
-    //
-    //     setComments(comments){
-    //         //this will be change, we want to delete comments from don and insert new one
-    //
-    //     }
-    //     /**
-    //      * The method returns the image HTML element.
-    //      * @returns {HTMLLIElement} The image's html.
-    //      */
-    //     getHtml(){
-    //         let ans = document.createElement('li');
-    //         ans.className = "list-group-item";
-    //         ans.id = `${this.#data.date}-post`;
-    //         ans.appendChild(this.#generateHtml());
-    //         return ans;
-    //     }
-    //
-    //     /**
-    //      * The method generates or regenerates the image's html element.
-    //      */
-    //     #generateHtml(){
-    //         let row = document.createElement("div");
-    //         row.className = "row";
-    //         row.appendChild(this.#getName());
-    //         row.appendChild(this.#getImage());
-    //         row.appendChild(this.#getInfo());
-    //         row.appendChild(this.#getComments());
-    //         row.appendChild(this.#getShowComments());
-    //         return row;
-    //     }
-    //     /**
-    //      * The method returns the images date (by the NASA api).
-    //      * @returns {string}
-    //      */
-    //     getDate(){
-    //         return this.#data.date;
-    //     }
-    //
-    //     /**
-    //      * This method creates and returns an h3 element with the title of the data
-    //      * @returns {HTMLHeadingElement}
-    //      */
-    //     #getName(){
-    //         let title = document.createElement("h3");
-    //         title.innerText = this.#data.title;
-    //         title.className = "col-12";
-    //         return title;
-    //     }
-    //
-    //     /**
-    //      * This method creates and returns an image or iframe element depends on the data media type
-    //      * @returns {HTMLImageElement}
-    //      */
-    //     #getImage(){
-    //         let ans = document.createElement(`${(this.#data.media_type === "video") ? "iframe": "img"}`)
-    //         ans.src = this.#data.url;
-    //         ans.alt = "";
-    //         ans.className = "img-fluid col-6 nasa-images";
-    //         return ans;
-    //     }
-    //
-    //     /**
-    //      * This method creates and returns an p element with the title of the data
-    //      * @returns {HTMLParagraphElement}
-    //      */
-    //     #getInfo(){
-    //         let ans = document.createElement("div");
-    //         ans.className = "col";
-    //         let row = document.createElement("div");
-    //         row.className = "row"
-    //         let firstCol = document.createElement("div")
-    //         firstCol.className = "col-12"
-    //         firstCol.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"} Date: ${this.#data.date}`
-    //         let secondCol = document.createElement("div")
-    //         secondCol.className = "col-12"
-    //         secondCol.innerText = `Explanation: ${this.#data.explanation ?? ""}`
-    //         //ans.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"}\nDate: ${this.#data.date}\nExplanation: ${this.#data.explanation}\n`;
-    //         row.appendChild(firstCol)
-    //         row.appendChild(secondCol)
-    //         ans.appendChild(row)
-    //         return ans;
-    //     }
-    //
-    //     /**
-    //      * This method creates and returns a button element allowing the user to click and add a comment
-    //      * @returns {HTMLLIElement}
-    //      */
-    //     #getCommentButton(){
-    //         let li = document.createElement("li");
-    //         li.className = "list-group-item";
-    //         let commentButton = document.createElement('button');
-    //         commentButton.className = "comment-button btn btn-primary"
-    //         commentButton.innerText = 'Comment';
-    //         commentButton.id = `${this.#data.date}-comment_button`;
-    //         commentButton.addEventListener("click", (event)=>{
-    //             document.getElementById(`${this.#data.date}-comment_button`).classList.add("d-none")
-    //             document.getElementById(`${this.#data.date}-div`).classList.toggle("d-none")
-    //             //showAndHide(`${this.#data.date}-comment_button`, "hide");
-    //             //showAndHide(`${this.#data.date}-div`, "toggle");
-    //         });
-    //         li.appendChild(commentButton);
-    //         return li;
-    //     }
-    //
-    //     /**
-    //      * This method creates and returns a button element allowing the user to click and add a comment
-    //      * @returns {HTMLLIElement}
-    //      */
-    //     #getSendCommentButton(){
-    //         let li = document.createElement("li");
-    //         li.className = "list-group-item";
-    //         let button = document.createElement("button");
-    //         button.className ="input-group-text send-comment-button btn btn-primary";
-    //         button.innerText = "Send Comment";
-    //         button.addEventListener("click", (event)=> {
-    //             if (sendCommentValid(`${this.#data.date}-text-area`)) {
-    //                 let message = {
-    //                     method: "POST",
-    //                     headers: {"Content-Type": "application/json"},
-    //                     body: JSON.stringify({
-    //                         "picDate": this.#data.date,
-    //                         "content": document.getElementById(`${this.#data.date}-text-area`).value
-    //                     })
-    //                 }
-    //                 fetchRequest(`${COMMENTS_SERVER_URL}`, responseToChangeComments,this, message)
-    //                 // fetch("/home/api", {
-    //                 //     method: "POST",
-    //                 //     headers: {"Content-Type": "application/json"},
-    //                 //     body: JSON.stringify({
-    //                 //         "picDate": this.#data.date,
-    //                 //         "content": document.getElementById(`${this.#data.date}-text-area`).value
-    //                 //     })
-    //                 // }).then((res)=>{
-    //                 //     this.updateComments();
-    //                 // });
-    //             }
-    //         });
-    //         li.appendChild(button);
-    //         return li;
-    //     }
-    //
-    //
-    //     /**
-    //      * This method creates and returns a textarea element for the user to write a comment in
-    //      * @returns {HTMLDivElement}
-    //      */
-    //     #getCommentTextField(){
-    //         let div = document.createElement('div');
-    //         let textArea = document.createElement("textarea");
-    //         //div.className = "input-group";
-    //         div.className = "input-group d-none";
-    //         div.id = `${this.#data.date}-div`;
-    //         //div.style = "display: none";
-    //         textArea.className = "col-12";
-    //         textArea.ariaLabel= "With textarea";
-    //         textArea.maxLength = "128";
-    //         textArea.id = `${this.#data.date}-text-area`;
-    //         div.appendChild(textArea);
-    //         div.appendChild(this.#getSendCommentButton());
-    //         return div;
-    //     }
-    //
-    //     /**
-    //      * This method creates and returns a button for the user to clikc when he wants to see the comments
-    //      * @returns {HTMLButtonElement}
-    //      */
-    //     #getShowComments(){
-    //         let showComments = document.createElement("button");
-    //         showComments.innerText = "Show Comments";
-    //         showComments.id = `${this.#data.date}-show`;
-    //         showComments.className = 'btn btn-primary col-12 my-2';
-    //         showComments.addEventListener("click", (event)=>{
-    //             this.#displayComments = !this.#displayComments;
-    //             //showAndHide(`${event.target.id}-comments`, "toggle");
-    //             document.getElementById(`${event.target.id}-comments`).classList.toggle("d-none")
-    //             showComments.innerText = this.#displayComments ? 'Hide Comments' : 'Show Comments';
-    //         });
-    //         return showComments
-    //     }
-    //
-    //     /**
-    //      * This method creates and returns a ol of all the comments we have in the data for each image
-    //      * returning it with the username and content data.
-    //      * @returns {HTMLOListElement}
-    //      */
-    //     #getComments(){
-    //         let comments = document.createElement('ol');
-    //         //comments.className = "list-group col-12";
-    //         comments.className = `list-group col-12 ${this.#displayComments ? "": "d-none"}`;
-    //         comments.id = `${this.#data.date}-show-comments`;
-    //         // comments.style.display = this.#displayComments ? "block" : "none";
-    //         const imagePointer = this;
-    //         imagePointer.#comments.forEach(function(val){
-    //             let li = document.createElement('li');
-    //             let username = document.createElement('p');
-    //             let content = document.createElement('p');
-    //             li.className = "list-group-item";
-    //             username.innerText = `Username: ${val.username}`;
-    //             content.innerText = `${val.content}`;
-    //             li.appendChild(username);
-    //             li.appendChild(content);
-    //             //if(val.username === USERNAME)
-    //                 li.appendChild(imagePointer.#getDelButton(val.id));
-    //             comments.appendChild(li);
-    //         })
-    //         comments.appendChild(this.#getCommentButton());
-    //         comments.appendChild(this.#getCommentTextField());
-    //         return comments;
-    //     }
-    //
-    //     /**
-    //      * This method creates and returns a button for the user to delete his comments
-    //      * @param id
-    //      * @returns {HTMLButtonElement}
-    //      */
-    //     #getDelButton(id){
-    //         let button = document.createElement('button');
-    //         button.className = "btn btn-primary delete-comment";
-    //         button.innerText = "Delete";
-    //         button.id = `${this.#data.date}-${id}-del-button`;
-    //         button.addEventListener("click", (event)=>{
-    //             let params = new URLSearchParams();
-    //             params.append("id", id.toString())
-    //             let message = {method:"DELETE"}
-    //             fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,responseToChangeComments,this,message)
-    //             // fetch(`/home/api?${params.toString()}`, {
-    //             //     method: "DELETE"
-    //             // }).then((event)=>{
-    //             //     this.updateComments();
-    //             // });
-    //         });
-    //
-    //         return button;
-    //     }
-    //
-    //     /**
-    //      * This function updates the feed so the user will see the last updates
-    //      */
-    //     updateComments(){
-    //         let params = new URLSearchParams()
-    //         params.append("images",`["${this.#data.date}"]`)
-    //         fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,handleCommentsUpdateResponse, this)
-    //         // fetch(`/home/api?images=["${this.#data.date}"]`)
-    //         //     .then((response)=>{
-    //         //         return response.json();
-    //         //     }).then((comments)=>{
-    //         //         this.#comments = comments;
-    //         //         document.getElementById(`${this.#data.date}-post`).innerHTML = "";
-    //         //         document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
-    //         //         this.#lastUpdate = Date.now();
-    //         // });
-    //
-    //     }
-    //     handleCommentsUpdateResponse(comments){
-    //         this.#comments = comments;
-    //         document.getElementById(`${this.#data.date}-post`).innerHTML = "";
-    //         document.getElementById(`${this.#data.date}-post`).appendChild(this.#generateHtml());
-    //         this.#lastUpdate = Date.now();
-    //     }
-    //
-    //     getLastUpdate(){
-    //         return this.#lastUpdate;
-    //     }
-    // }
-
 })();
