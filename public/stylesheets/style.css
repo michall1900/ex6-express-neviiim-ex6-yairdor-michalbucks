@@ -7,11 +7,11 @@ a {
   color: #00B7FF;
 }
 
-.nasa-images{
-  max-width: 400px;
-  max-height: 320px;
-  object-fit: cover;
-}
+/*.nasa-images{*/
+/*  max-width: 400px;*/
+/*  max-height: 320px;*/
+/*  object-fit: fill;*/
+/*}*/
 
 .spinner-background {
   position: fixed;
