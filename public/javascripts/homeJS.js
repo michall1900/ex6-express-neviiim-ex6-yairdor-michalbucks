@@ -132,7 +132,6 @@
     function errorHandler(error) {
         // need to fix this function
         if (error.message) {
-
             const [status, errorMsg] = [...error.message.split(",")]
             if (status.includes("301") || status.includes("302")) {
                 //do redirect from client and display error message
@@ -141,7 +140,7 @@
                 MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${errorMsg??error}`
             }
         } else {
-            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${error.message??error}`
+            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${error.msg??error}`
         }
         MODAL_ERROR_BUTTON_ELEMENT.click()
 
@@ -456,7 +455,7 @@
             let contentDiv = document.createElement('div')
             contentDiv.className = "row align-items-center"
             let content = document.createElement('div');
-            content.className = "col-10 text-body text-break text-body "
+            content.className = "col-9 text-body text-break text-body "
             content.innerText = `${val.content}`;
             contentDiv.appendChild(content)
             //if(val.username === USERNAME)
@@ -684,7 +683,7 @@
 
         #getSpinner(){
             const div = document.createElement("div")
-            div.className = "text-align d-none"
+            div.className = "text-align-center d-none"
             div.id = `${this.#date}-spinner`
             const spinner = document.createElement("div")
             spinner.className="spinner-border"
@@ -698,7 +697,7 @@
          */
         #getDelButton(id) {
             let buttonDiv = document.createElement("div")
-            buttonDiv.className = "col-2 me-auto mt-2"
+            buttonDiv.className = "col-3 me-auto mt-2"
             let button = document.createElement('button');
             button.className = "btn btn-secondary delete-comment ";
             button.innerText = "Delete";
