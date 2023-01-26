@@ -17,6 +17,7 @@
     let USER_DATE_ELEMENT;
     let CONTENT_ELEMENT;
     const MAX_WORDS_NUMBER_IN_DESCRIPTION = 30
+    let TIMESTAMP = 0
     /**
      * This module is validates fields.
      * @type {{isValidItemId: (function(*)), isValidCommentsArray: (function(*)), isValidTimeStamp: (function(*)), isValidDate: (function(*)), isString: (function(*)), isValidURL: ((function(*): boolean)|*)}}
@@ -227,7 +228,8 @@
         IMAGES.push(...newImages)
         let params = new URLSearchParams()
         //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
-        params.append("images", `[${getPicsDates(data).toString()}]`)
+
+        params.append("images", `[${getPicsDates(newImages).toString()}]`)
         fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,buildImages,SPINNER_BACKGROUND_CLASS_NAME, startIndex)
         SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
     }
@@ -241,8 +243,10 @@
     function buildImages(comments, startIndex) {
         //validateComments(comments)
         IMAGES.slice(startIndex).forEach((img) => {
-            img.setComments(getImageComments(comments, img.getDate()))
+            img.setComments(getImageComments(comments.comments, img.getDate()), comments.lastUpdate)
+            TIMESTAMP =comments.lastUpdate
         })
+
     }
 
     function validateComments(comments) {
@@ -304,11 +308,12 @@
      */
     function getImageComments(comments, date) {
         let imageComments = [];
-        comments.forEach(function (comment) {
-            if (comment.picDate === date) {
-                imageComments.push(comment);
+        comments.keys().forEach(function (commentDate) {
+            if (commentDate === date) {
+                imageComments.push(comments[commentDate]);
             }
         })
+        //imageComments.sort((a,b)=> a.updatedAt.toString().localeCompare(b.updatedAt.toString()))
         return imageComments;
     }
 
@@ -316,11 +321,15 @@
      * The function gets from the server the time stamp of its last database modification.
      */
     function updateImages() {
-        fetchRequest(`${COMMENTS_SERVER_URL}/timeStamp`, handleUpdateResponse)
+        let params = new URLSearchParams()
+        //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
+        params.append("images", `[${getPicsDates(IMAGES).toString()}]`)
+        fetchRequest(`${COMMENTS_SERVER_URL}/update?${params.toString()}`, handleUpdateResponse)
     }
 
     function handleUpdateResponse(version) {
         //should validate returned version format and check for value
+        console.log(version)
         IMAGES.forEach((image) => {
             if (parseInt(version["value"]) > image.getLastUpdate())
                 image.updateComments();
@@ -337,7 +346,7 @@
     function getPicsDates(data) {
         let pics = [];
         data.forEach(function (pic) {
-            pics.push(`"${pic.date}"`);
+            pics.push(`"${pic.getDate()}"`);
         });
         return pics;
     }
@@ -385,7 +394,7 @@
         #lastUpdate
         #date
         #data
-        #comments = []
+        #comments = new Map() //key=comment Id, value = element
         #displayComments
         #imageHtml
         #commentsElement
@@ -397,7 +406,7 @@
             this.#displayComments = false;
         }
 
-        setComments(comments) {
+        setComments(comments, lastUpdate) {
             //this will be change, we want to delete comments from dom and insert new one into it
 
             //easy way - don't delete from dom directly, but delete all the comments that should be deleted and
@@ -405,9 +414,12 @@
             // After that, use the code below to put again all comments in dom.
             // Harder way - delete each element from dom, and add the new once
             // (you could give them to #setHtmlComments).
-            this.#comments = comments
-            this.#setHtmlComments(this.#comments)
-            this.#lastUpdate = Date.now();
+            //this.#comments = comments
+            this.#deleteComments(comments.delete)
+            let sortedComments = comments.add
+            sortedComments.sort((a,b)=>a.comment.id - b.comment.id)
+            this.#setHtmlComments(sortedComments)
+            this.#lastUpdate = lastUpdate;
         }
 
         getImageHtml() {
@@ -423,7 +435,15 @@
         getDate() {
             return this.#date;
         }
-
+        #deleteComments(commentsToDelete){
+            const imagePointer = this;
+            commentsToDelete.forEach((id)=>{
+                if (imagePointer.#comments.has(id)){
+                    imagePointer.#comments.get(id).remove()
+                    imagePointer.#comments.delete(id)
+                }
+            })
+        }
         #setHtmlComments(newComments) {
             this.#commentsElement.innerText = ""
             const imagePointer = this;
@@ -432,10 +452,11 @@
                 li.className = "list-group-item mt-2 bg-light border-5 border-white";
                 let div = document.createElement("div")
                 div.className = "row align-items-center"
-                div.appendChild(imagePointer.#getUserDataCol(val))
+                div.appendChild(imagePointer.#getUserDataCol(val.comment))
                 div.appendChild(imagePointer.#getContentAndDeleteCol(val))
                 li.appendChild(div)
                 imagePointer.#commentsElement.appendChild(li);
+                imagePointer.#comments.set(val.id, li);
             })
         }
 
@@ -456,10 +477,10 @@
             contentDiv.className = "row align-items-center"
             let content = document.createElement('div');
             content.className = "col-9 text-body text-break text-body "
-            content.innerText = `${val.content}`;
+            content.innerText = `${val.comment.content}`;
             contentDiv.appendChild(content)
-            //if(val.username === USERNAME)
-                contentDiv.appendChild(this.#getDelButton(val.id))
+            if(val.couldDelete)
+                contentDiv.appendChild(this.#getDelButton(val.comment.id))
             contentAndDeleteCol.appendChild(contentDiv)
             return contentAndDeleteCol
         }

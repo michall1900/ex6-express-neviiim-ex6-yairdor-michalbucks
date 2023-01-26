@@ -51,8 +51,19 @@ const validationModule = (function(){
         return (isString(object) && object.match(pattern))
     }
 
+    /**
+     * Receives an object (should be a string) and return if it is a date.
+     * @param object - any object
+     * @returns {boolean} - true if it is valid date, otherwise false.
+     */
+    function isValidDate(object) {
+        return ((!!object && isString(object) &&
+            object.toString().match(/\d{4}-\d{2}-\d{2}/)) && !((new Date(object)).toString().toLowerCase().includes("invalid date")))
+    }
+
+
     return{
-        isNotEmpty, isLowerThanMaximumLength, isGreaterThanMinimumLength,isInPattern, isString, isValidEmailTemplate
+        isNotEmpty, isLowerThanMaximumLength, isGreaterThanMinimumLength,isInPattern, isString, isValidEmailTemplate, isValidDate
     }
 
 })();
