@@ -16,6 +16,7 @@
     let MODAL_ERROR_BUTTON_ELEMENT;
     let USER_DATE_ELEMENT;
     let CONTENT_ELEMENT;
+    const MAX_WORDS_NUMBER_IN_DESCRIPTION = 30
     /**
      * This module is validates fields.
      * @type {{isValidItemId: (function(*)), isValidCommentsArray: (function(*)), isValidTimeStamp: (function(*)), isValidDate: (function(*)), isString: (function(*)), isValidURL: ((function(*): boolean)|*)}}
@@ -359,7 +360,28 @@
     function responseToChangeComments(_, currentImage) {
         currentImage.updateComments()
     }
-
+    /**
+     * This function is checking if there is need to split the explanation (explanation > MAX_WORDS_NUMBER_IN_DESCRIPTION)
+     * It returns the result of the splitting if there was one.
+     * The assumption is the explanation is a text.
+     * @param explanation - Text
+     * @returns {{isSplit: boolean, beforeMore: string, afterMore: string}}
+     */
+    function isNeedToSplit(explanation){
+        let splitDescription,beforeMore ="", afterMore=""
+        let isSplit = false
+        if (explanation){
+            splitDescription =  explanation.split(" ")
+            if (splitDescription.length >= MAX_WORDS_NUMBER_IN_DESCRIPTION) {
+                isSplit = true
+                beforeMore = splitDescription.slice(0, MAX_WORDS_NUMBER_IN_DESCRIPTION).join(" ")
+                afterMore = splitDescription.slice(MAX_WORDS_NUMBER_IN_DESCRIPTION).join(" ")
+            }
+            else
+                beforeMore = explanation
+        }
+        return {isSplit: isSplit, beforeMore:beforeMore, afterMore:afterMore}
+    }
     class Image {
         #lastUpdate
         #date
@@ -400,7 +422,7 @@
          * @returns {string}
          */
         getDate() {
-            return this.#data.date;
+            return this.#date;
         }
 
         #setHtmlComments(newComments) {
@@ -437,9 +459,8 @@
             content.className = "col-10 text-body text-break text-body "
             content.innerText = `${val.content}`;
             contentDiv.appendChild(content)
-            //if(val.username === USERNAME){
+            //if(val.username === USERNAME)
                 contentDiv.appendChild(this.#getDelButton(val.id))
-            //}
             contentAndDeleteCol.appendChild(contentDiv)
             return contentAndDeleteCol
         }
@@ -447,7 +468,7 @@
         #initializePictureHtml() {
             this.#imageHtml = document.createElement('li');
             this.#imageHtml.className = "list-group-item";
-            this.#imageHtml.id = `${this.#data.date}-post`;
+            this.#imageHtml.id = `${this.#date}-post`;
             let imageRow = document.createElement("div");
             imageRow.className = "row";
             imageRow.appendChild(this.#getName());
@@ -501,15 +522,52 @@
             firstCol.innerText = `Copyright: ${this.#data.copyright ?? "Unknown"}`
             let secondCol = document.createElement("div")
             firstCol.className = "col-12 text-break"
-            secondCol.innerText = `Date: ${this.#data.date}`
-            let thirdCol = document.createElement("div")
-            thirdCol.className = "col-12 my-2 text-break text-body"
-            thirdCol.innerText = `Explanation: ${this.#data.explanation ?? ""}`
+            secondCol.innerText = `Date: ${this.#date}`
+
             row.appendChild(firstCol)
             row.appendChild(secondCol)
-            row.appendChild(thirdCol)
+            row.appendChild(this.#getExplanation())
             ans.appendChild(row)
             return ans;
+        }
+        #getExplanation(){
+            let {isSplit, beforeMore, afterMore } =isNeedToSplit(this.#data.explanation)
+            let thirdCol = document.createElement("div")
+            thirdCol.className = "col-12 my-2 text-break text-body"
+            let row = document.createElement("div")
+            row.className = "row text-break text-body"
+            let beforeMoreCol = document.createElement("div")
+            beforeMoreCol.className = "col-12"
+            beforeMoreCol.innerText = `Explanation: ${beforeMore?? ""}`
+            if (isSplit)
+                this.#getMoreColumnsElements(beforeMoreCol, afterMore).forEach((elem)=> row.appendChild(elem))
+            else
+                row.appendChild(beforeMoreCol)
+            thirdCol.appendChild(row)
+            return thirdCol
+        }
+
+        #getMoreColumnsElements(beforeMoreCol, afterMoreText){
+            let afterMoreCol = document.createElement("div")
+            afterMoreCol.className = "col-auto me-auto mt-2"
+            let dots = document.createElement("span")
+            dots.className = "d-lg-none"
+            dots.innerText = "..."
+            let moreText = document.createElement("span")
+            moreText.className = "d-none d-lg-block text-break"
+            moreText.innerText = ` ${afterMoreText}`
+            let moreButton = document.createElement("button")
+            moreButton.className = "btn btn-secondary d-lg-none"
+            moreButton.innerText = "Read more"
+            moreButton.addEventListener("click",()=>{
+                dots.classList.toggle('d-none')
+                moreText.classList.toggle('d-none')
+                moreButton.innerText = (moreButton.innerText === "Read more") ? "Read less":"Read more"
+            })
+            beforeMoreCol.appendChild(dots)
+            beforeMoreCol.appendChild(moreText)
+            afterMoreCol.appendChild(moreButton)
+            return [beforeMoreCol, afterMoreCol]
         }
 
         /**
@@ -519,15 +577,15 @@
         #getCommentButton() {
             let row = document.createElement("div");
             row.className = "row mt-2";
-            row.id = `${this.#data.date}-comment_button`
+            row.id = `${this.#date}-comment_button`
             let col = document.createElement("col")
             col.className = "col"
             let commentButton = document.createElement('button');
             commentButton.className = "comment-button btn btn-primary "
             commentButton.innerText = 'Comment';
             commentButton.addEventListener("click", (event) => {
-                document.getElementById(`${this.#data.date}-comment_button`).classList.add("d-none")
-                document.getElementById(`${this.#data.date}-div`).classList.toggle("d-none")
+                document.getElementById(`${this.#date}-comment_button`).classList.add("d-none")
+                document.getElementById(`${this.#date}-div`).classList.toggle("d-none")
             });
             col.appendChild(commentButton)
             row.appendChild(col);
@@ -545,20 +603,20 @@
             button.className = "input-group-text send-comment-button btn btn-primary";
             button.innerText = "Send Comment";
             button.addEventListener("click", (event) => {
-                if (sendCommentValid(`${this.#data.date}-text-area`)) {
+                if (sendCommentValid(`${this.#date}-text-area`)) {
                     let message = {
                         method: "POST",
                         headers: {"Content-Type": "application/json"},
                         body: JSON.stringify({
-                            "picDate": this.#data.date,
-                            "content": document.getElementById(`${this.#data.date}-text-area`).value
+                            "picDate": this.#date,
+                            "content": document.getElementById(`${this.#date}-text-area`).value
                         })
                     }
-                    document.getElementById(`${this.#data.date}-text-area`).value = ""
-                    document.getElementById(`${this.#data.date}-div`).classList.add("d-none")
-                    document.getElementById(`${this.#data.date}-comment_button`).classList.remove("d-none")
+                    document.getElementById(`${this.#date}-text-area`).value = ""
+                    document.getElementById(`${this.#date}-div`).classList.add("d-none")
+                    document.getElementById(`${this.#date}-comment_button`).classList.remove("d-none")
 
-                    fetchRequest(`${COMMENTS_SERVER_URL}`, responseToChangeComments,`${this.#data.date}-spinner`, this, message)
+                    fetchRequest(`${COMMENTS_SERVER_URL}`, responseToChangeComments,`${this.#date}-spinner`, this, message)
                 }
                 else{
                     errorHandler(new Error("Invalid comment content. Comment couldn't be empty or bigger than 128 characters"))
@@ -577,12 +635,12 @@
             let div = document.createElement('div');
             let textArea = document.createElement("textarea");
             div.className = "row mt-2 d-none";
-            div.id = `${this.#data.date}-div`;
+            div.id = `${this.#date}-div`;
             textArea.className = "col-12 border-dark";
             textArea.ariaLabel = "With textarea";
             textArea.maxLength = 128;
             textArea.minLength = 1;
-            textArea.id = `${this.#data.date}-text-area`;
+            textArea.id = `${this.#date}-text-area`;
             div.appendChild(textArea);
             div.appendChild(this.#getSendCommentButton());
             return div;
@@ -595,7 +653,7 @@
         #getShowComments() {
             let showComments = document.createElement("button");
             showComments.innerText = "Show Comments";
-            showComments.id = `${this.#data.date}-show`;
+            showComments.id = `${this.#date}-show`;
             showComments.className = 'btn btn-primary col-12 my-2';
             showComments.addEventListener("click", (event) => {
                 this.#displayComments = !this.#displayComments;
@@ -613,10 +671,10 @@
         #getCommentsElement() {
             let ans = document.createElement('div')
             ans.className = `col-12 ${this.#displayComments ? "" : "d-none"}`
-            ans.id = `${this.#data.date}-show-comments`
+            ans.id = `${this.#date}-show-comments`
             this.#commentsElement = document.createElement('ol');
             this.#commentsElement.className = `list-group container`;
-            this.#commentsElement.id = `${this.#data.date}-show-all-comments`;
+            this.#commentsElement.id = `${this.#date}-show-all-comments`;
             ans.appendChild(this.#commentsElement)
             ans.appendChild(this.#getSpinner())
             ans.appendChild(this.#getCommentButton());
@@ -627,7 +685,7 @@
         #getSpinner(){
             const div = document.createElement("div")
             div.className = "text-align d-none"
-            div.id = `${this.#data.date}-spinner`
+            div.id = `${this.#date}-spinner`
             const spinner = document.createElement("div")
             spinner.className="spinner-border"
             div.appendChild(spinner)
@@ -644,12 +702,12 @@
             let button = document.createElement('button');
             button.className = "btn btn-secondary delete-comment ";
             button.innerText = "Delete";
-            button.id = `${this.#data.date}-${id}-del-button`;
+            button.id = `${this.#date}-${id}-del-button`;
             button.addEventListener("click", (event) => {
                 let params = new URLSearchParams();
                 params.append("id", id.toString())
                 let message = {method: "DELETE"}
-                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`, responseToChangeComments, `${this.#data.date}-spinner`, this, message)
+                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`, responseToChangeComments, `${this.#date}-spinner`, this, message)
             });
             buttonDiv.appendChild(button)
             return buttonDiv;
@@ -657,8 +715,8 @@
 
         updateComments() {
             let params = new URLSearchParams()
-            params.append("images", `["${this.#data.date}"]`)
-            fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`, handleCommentsUpdateResponse,`${this.#data.date}-spinner`, this)
+            params.append("images", `["${this.#date}"]`)
+            fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`, handleCommentsUpdateResponse,`${this.#date}-spinner`, this)
         }
 
         getLastUpdate() {
