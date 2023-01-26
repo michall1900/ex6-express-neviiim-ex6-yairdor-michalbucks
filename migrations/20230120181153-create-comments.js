@@ -27,7 +27,7 @@ module.exports = {
       },
       creationTime: {
         type: Sequelize.DATE,
-        allowNull: {args: false, msg: ""}
+        allowNull: {args: true, msg: ""}
       },
       deletionTime: {
         type: Sequelize.DATE,
