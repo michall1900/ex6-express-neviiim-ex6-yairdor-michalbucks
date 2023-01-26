@@ -474,14 +474,17 @@
 
         /**
          * This method creates and returns an image or iframe element depends on the data media type
-         * @returns {HTMLImageElement}
+         * @returns {HTMLDivElement}
          */
         #getImage() {
-            let ans = document.createElement(`${(this.#data.media_type === "video") ? "iframe" : "img"}`)
-            ans.src = this.#data.url;
-            ans.alt = "";
-            ans.className = "img-fluid col-6 nasa-images";
-            return ans;
+            let div = document.createElement("div")
+            div.className="col-5 col-lg-3"
+            let img = document.createElement(`${(this.#data.media_type === "video") ? "iframe" : "img"}`)
+            img.src = this.#data.url;
+            img.alt = "";
+            img.className = "img-fluid nasa-images";
+            div.appendChild(img)
+            return div;
         }
 
         /**
@@ -490,7 +493,7 @@
          */
         #getInfo() {
             let ans = document.createElement("div");
-            ans.className = "col";
+            ans.className = "col-7 col-lg-9";
             let row = document.createElement("div");
             row.className = "row"
             let firstCol = document.createElement("div")
