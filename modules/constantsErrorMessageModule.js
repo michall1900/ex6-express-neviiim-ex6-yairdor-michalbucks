@@ -11,7 +11,6 @@ const constantsErrorMessageModule= (function(){
     const LOGIN_ERR = "User doesn't exist or you entered invalid email/ password"
     const SOMETHING_WENT_WRONG = "Oops, something went wrong..."
     const INVALID_STRING_ERROR = "should be a string"
-
     const FIND_COMMENTS = "Error while reaching to find comments in the db"
     const CREATE_COMMENT = "Error while trying to create a new comment"
     const DELETE_COMMENT = "Error while trying to delete a comment"
@@ -22,12 +21,13 @@ const constantsErrorMessageModule= (function(){
     const REQUEST_NO_QUERY = "Request contains no query"
     const MISSING_PARAMETERS = "required parameters are missing, The required parameters are image (url), username (string) " +
         "and comment (string)"
+    const COULDNT_FIND_UPDATE_DATE = "Couldn't find last update"
 
     return {
         EMAIL_EXIST_ERR, EMPTY_ERR, MIN_AND_MAX_LENGTH_ERR, MAX_LENGTH_ERR, NO_ALPHA_ERR,EMAIL_ERR,
         INVALID_PASSWORD_ERR, LOGIN_ERR, SOMETHING_WENT_WRONG,INVALID_STRING_ERROR, FIND_COMMENTS,
         CREATE_COMMENT, DELETE_COMMENT,UPDATE_COMMENT, MISSING_IMAGES, DATES_INVALID_FORMAT,
-        CANT_PARSE_DATA, REQUEST_NO_QUERY, MISSING_PARAMETERS
+        CANT_PARSE_DATA, REQUEST_NO_QUERY, MISSING_PARAMETERS, COULDNT_FIND_UPDATE_DATE
     }
 })();
 
