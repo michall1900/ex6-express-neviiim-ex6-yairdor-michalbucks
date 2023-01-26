@@ -8,6 +8,8 @@ const constantsErrorMessageModule= (function(){
     const INVALID_PASSWORD_ERR = "One of the passwords are invalid. Make sure that the first one is the same as the " +
         "second."
 
+    const TOO_LONG = "Too long, The max length is"
+    const USERNAME_ERROR = "Username should contain first and last name"
     const LOGIN_ERR = "User doesn't exist or you entered invalid email/ password"
     const SOMETHING_WENT_WRONG = "Oops, something went wrong..."
     const INVALID_STRING_ERROR = "should be a string"
@@ -27,7 +29,7 @@ const constantsErrorMessageModule= (function(){
         EMAIL_EXIST_ERR, EMPTY_ERR, MIN_AND_MAX_LENGTH_ERR, MAX_LENGTH_ERR, NO_ALPHA_ERR,EMAIL_ERR,
         INVALID_PASSWORD_ERR, LOGIN_ERR, SOMETHING_WENT_WRONG,INVALID_STRING_ERROR, FIND_COMMENTS,
         CREATE_COMMENT, DELETE_COMMENT,UPDATE_COMMENT, MISSING_IMAGES, DATES_INVALID_FORMAT,
-        CANT_PARSE_DATA, REQUEST_NO_QUERY, MISSING_PARAMETERS, COULDNT_FIND_UPDATE_DATE
+        CANT_PARSE_DATA, REQUEST_NO_QUERY, MISSING_PARAMETERS, COULDNT_FIND_UPDATE_DATE, USERNAME_ERROR, TOO_LONG
     }
 })();
 
