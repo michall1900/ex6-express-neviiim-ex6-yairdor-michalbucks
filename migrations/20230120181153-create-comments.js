@@ -1,4 +1,5 @@
 'use strict';
+const constants = require("../modules/constantsErrorMessageModule.js");
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -11,23 +12,19 @@ module.exports = {
       },
       picDate: {
         type: Sequelize.STRING,
-        allowNull: {args: false, msg: ""}
+        allowNull: {args: false, msg: `${constants.EMPTY_ERR} picture date.`}
       },
       username: {
         type: Sequelize.STRING,
-        allowNull: {args: false, msg: ""}
+        allowNull: {args: false, msg: `${constants.EMPTY_ERR} username.`}
       },
       userid: {
         type: Sequelize.STRING,
-        allowNull: {args: false, msg: ""}
+        allowNull: {args: false, msg: `${constants.EMPTY_ERR} user ID.`}
       },
       content: {
         type: Sequelize.STRING,
-        allowNull: {args: false, msg: ""}
-      },
-      creationTime: {
-        type: Sequelize.DATE,
-        allowNull: {args: true, msg: ""}
+        allowNull: {args: false, msg: `${constants.EMPTY_ERR} comment content.`}
       },
       deletionTime: {
         type: Sequelize.DATE,
