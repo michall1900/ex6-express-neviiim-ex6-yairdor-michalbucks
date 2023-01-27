@@ -4,29 +4,20 @@ const Sequelize = require('sequelize');
 const db = require('../models');
 const constants = require("../modules/constantsErrorMessageModule.js");
 const validations = require("../modules/validationModule.js")
+
 /**
- * The rout receives a get request which contains an images array and returns a json of each image's comments.
+ * This route receives a get request which contains an images array and returns a json of each image's comments.
  */
-router.get("/print", (req,res)=>{
-    return db.Comments.findAll().then((comments) =>{res.json(comments)})
-})
 router.get('/', function(req, res, next) {
     if(validateGetRequest(req,res) && validateAllDates(req,res)) {
         let dataArray = JSON.parse(req.query.images);
         return db.Comments.findAll({
-            //attributes: {exclude: ['userid']},
             where: {
                 picDate: {
                     [Sequelize.Op.or]: dataArray
                 }
-                // },
-                // deletionTime:{
-                //     [Sequelize.Op.is]: null
-                // }
             }
         }).then((comments) => {
-            //console.log(comments)
-            //res.send(comments)
             res.json({
                 "comments":parseComments(comments,false,req.session.userId), "lastUpdate": findLastUpdate(comments)});
         })
@@ -37,7 +28,7 @@ router.get('/', function(req, res, next) {
 });
 
 /**
- * The route posting a comment on the received image by the received username.
+ * The route handles the post request of '/' - gets a new comment and adds it to the DB
  */
 router.post('/', function(req, res, next) {
     if (validateNewCommentInput(req, res)) {
@@ -53,7 +44,8 @@ router.post('/', function(req, res, next) {
 });
 
 /**
- * The route deletes an image's comment if possible.
+ * The route deletes a comment from the DB if possible - If the user who tried to
+ * delete it is the owner of this comment.
  */
 router.delete('/', function(req, res, next) {
     if(validateDeleteRequestInput(req,res)) {
@@ -61,18 +53,16 @@ router.delete('/', function(req, res, next) {
         let userid = req.session.userId;
         return db.Comments.findOne({where: {id: index}})
             .then((comment) => {
-                console.log(comment)
                 if (!comment || comment.deletionTime)
-                    throw new Error("Comment not found, maybe deleted before")
+                    throw new Error(constants.COMMENT_NOT_FOUND)
                 if (comment.userid !== userid) {
                     updateCommentDeletion(comment);
-                    //comment.destroy({force: true});
                 }
                 else{
-                    throw new Error("You can't delete this comment")
+                    throw new Error(constants.CANT_DELETE_COMMENT)
                 }
             })
-            .then(() => res.json({status:200}))//res.send({index}))
+            .then(() => res.json({status:200}))
             .catch((err) => {
                 ErrorMsg(res,constants.DELETE_COMMENT);
             })
@@ -80,36 +70,32 @@ router.delete('/', function(req, res, next) {
 });
 
 /**
- *
+ * This route gets dates of images to fetch comments from and a time-stamp that
+ * represents that last update the person who sent the request did.
+ * returns all comments that got updated later to the timestamp.
  */
 router.get('/update', (req, res) =>{
     if(validateGetRequest(req,res) && validateAllDates(req,res)) {
         let dataArray = JSON.parse(req.query.images);
         let timeStamp= dataArray.pop()
-        //let timeStamp = new Date(dataArray.pop());
-        //const sequelizeTimestamp = Sequelize.literal(`'${timeStamp.toISOString()}'`);
-        //console.log(timeStamp)
-        //console.log(sequelizeTimestamp)
             db.Comments.findAll({
-                //attributes: {exclude: ['userid']},
                 where: {
                     picDate: {
                         [Sequelize.Op.or]: dataArray
                     },
                     [Sequelize.Op.or]: [
                         { createdAt:{
-                            [Sequelize.Op.gt]: timeStamp//sequelizeTimestamp
+                            [Sequelize.Op.gt]: timeStamp
                         }},
                         { deletionTime:{
                             [Sequelize.Op.not] : null,
-                            [Sequelize.Op.gt]: timeStamp//sequelizeTimestamp
+                            [Sequelize.Op.gt]: timeStamp
                             }}
                     ]
                 }
             }).then((comments) => {
                 res.json({
                     "comments":parseComments(comments,true,req.session.userId), "lastUpdate": findLastUpdate(comments,timeStamp)})
-                //res.send(parseComments(comments));
             })
                 .catch((err)=>{
                     ErrorMsg(res,constants.UPDATE_COMMENT);
@@ -118,7 +104,12 @@ router.get('/update', (req, res) =>{
 });
 
 /**
- *
+ * This function gets a list of comments and user ID - returns a dictionary that
+ * represents which comments needs to be added and which deleted.
+ * @param comments
+ * @param isNeedToReceiveDelete
+ * @param userId
+ * @returns {{}}
  */
 function parseComments(comments, isNeedToReceiveDelete,userId){
     console.log(!!comments.length)
@@ -141,7 +132,8 @@ function parseComments(comments, isNeedToReceiveDelete,userId){
 }
 
 /**
- *
+ * This function gets a comment and update its deletion time to now.
+ * @param comment
  */
 function updateCommentDeletion(comment){
     let nowDate = new Date();
@@ -164,11 +156,13 @@ function validateGetRequest(req, res){
 }
 
 /**
- *
+ * This function validates that all the input in the request query is valid dates.
+ * @param req
+ * @param res
+ * @returns {boolean}
  */
 function validateAllDates(req,res){
     try{
-        //req.query.images[req.query.images.length-1] = JSON.stringify(req.query.images)
         let dataArray = JSON.parse(req.query.images);
         for(let val of dataArray){
             let tempDate = new Date(val).toISOString().substring(0,10);
@@ -202,6 +196,7 @@ function validateDeleteRequestInput(req,res){
     }
     return true;
 }
+
 /**
  * The function validates that the received request is in the right syntax so the server would be able to operate the
  * comment request.
@@ -217,15 +212,23 @@ function validateNewCommentInput(req, res){
 }
 
 /**
- *
+ * This function gets an error msg and sent it to the client with status 400
+ * @param res
+ * @param err
+ * @constructor
  */
 function ErrorMsg(res, err){
     res.status(400);
     res.send(err);
 }
 
+/**
+ * This function finds and returns the last update time among the comments she receives
+ * @param comments
+ * @param timeStamp
+ * @returns {string|*}
+ */
 function findLastUpdate(comments=[], timeStamp="0"){
-
     const max = comments.reduce((max, record)=>{
         return new Date(record.updatedAt).valueOf() > new Date(max.updatedAt).valueOf()? record:max
     },{updatedAt:new Date(0)})
