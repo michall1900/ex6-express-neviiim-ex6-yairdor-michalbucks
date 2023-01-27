@@ -17,7 +17,7 @@
     let USER_DATE_ELEMENT;
     let CONTENT_ELEMENT;
     const MAX_WORDS_NUMBER_IN_DESCRIPTION = 30
-    let TIMESTAMP = 0
+    let TIMESTAMP = "0"
     /**
      * This module is validates fields.
      * @type {{isValidItemId: (function(*)), isValidCommentsArray: (function(*)), isValidTimeStamp: (function(*)), isValidDate: (function(*)), isString: (function(*)), isValidURL: ((function(*): boolean)|*)}}
@@ -164,14 +164,17 @@
         }
     }
 
-    async function fetchRequest(url, responseHandler,spinnerId, dataForResHandler = undefined, request = undefined) {
+    async function fetchRequest(url, responseHandler,spinnerIdArr=[], dataForResHandler = undefined, request = undefined) {
         //there needs to be many spinners, for loading comments for adding comments.. it can't be just in full page
-        let spinnerElem
-        if (spinnerId)
-            spinnerElem = document.getElementById(spinnerId)
+        let spinnerElements = []
+        spinnerIdArr.forEach((spinnerId)=>{
+            let elem = document.getElementById(spinnerId)
+            if(elem) {
+                spinnerElements.push(elem)
+                elem.classList.remove("d-none")
+            }
+        })
 
-        if(spinnerElem)
-            spinnerElem.classList.remove("d-none")
         try {
             let res = await fetch(url, request)
             await status(res)
@@ -181,8 +184,10 @@
             SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
             errorHandler(err)
         }
-        if(spinnerElem)
+        spinnerElements.forEach((spinnerElem)=>{
             spinnerElem.classList.add("d-none")
+        })
+
     }
 
     function onChangeDate(event) {
@@ -208,7 +213,7 @@
         params.append("api_key", `${APIKEY}`)
         params.append("start_date", `${start}`)
         params.append("end_date", `${currStartDate}`)
-        fetchRequest(`${NASA_API_URL}?${params.toString()}` ,handleNasaResponse, SPINNER_BACKGROUND_CLASS_NAME)
+        fetchRequest(`${NASA_API_URL}?${params.toString()}` ,handleNasaResponse, [SPINNER_BACKGROUND_CLASS_NAME])
         currStartDate = newStartDate.toISOString().substring(0, 10);
     }
 
@@ -230,7 +235,7 @@
         //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
 
         params.append("images", `[${getPicsDates(newImages).toString()}]`)
-        fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,buildImages,SPINNER_BACKGROUND_CLASS_NAME, startIndex)
+        fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,setComments,[SPINNER_BACKGROUND_CLASS_NAME], startIndex)
         SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
     }
 
@@ -240,13 +245,18 @@
             throw (new Error("Error occurred while getting Nasa response"))
     }
 
-    function buildImages(comments, startIndex) {
+    function setComments(comments, startIndex) {
         //validateComments(comments)
+        clearTimeout(TIMEOUT)
         IMAGES.slice(startIndex).forEach((img) => {
             img.setComments(getImageComments(comments.comments, img.getDate()), comments.lastUpdate)
-            TIMESTAMP =comments.lastUpdate
         })
-
+        console.log("============================",comments.lastUpdate, TIMESTAMP)
+        if(comments.lastUpdate && comments.lastUpdate > TIMESTAMP) {
+            TIMESTAMP = comments.lastUpdate
+            console.log(TIMESTAMP)
+        }
+        TIMEOUT = setTimeout(updateImages, 15000);
     }
 
     function validateComments(comments) {
@@ -307,14 +317,14 @@
      *
      */
     function getImageComments(comments, date) {
-        let imageComments = [];
-        comments.keys().forEach(function (commentDate) {
-            if (commentDate === date) {
-                imageComments.push(comments[commentDate]);
-            }
-        })
+        //let imageComments = [];
+        // Object.keys(comments).forEach(function (commentDate) {
+        //     if (commentDate === date) {
+        //         imageComments.push(comments[commentDate]);
+        //     }
+        // })
         //imageComments.sort((a,b)=> a.updatedAt.toString().localeCompare(b.updatedAt.toString()))
-        return imageComments;
+        return comments[date]??{}//imageComments;
     }
 
     /**
@@ -323,19 +333,28 @@
     function updateImages() {
         let params = new URLSearchParams()
         //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
-        params.append("images", `[${getPicsDates(IMAGES).toString()}]`)
-        fetchRequest(`${COMMENTS_SERVER_URL}/update?${params.toString()}`, handleUpdateResponse)
+        console.log(TIMESTAMP)
+        let dates = getPicsDates(IMAGES)
+        dates.push(`"${TIMESTAMP}"`)
+        params.append("images", `[${dates.toString()}]`)
+        fetchRequest(`${COMMENTS_SERVER_URL}/update?${params.toString()}`, setComments,getSpinnersIds(),0)
     }
-
-    function handleUpdateResponse(version) {
-        //should validate returned version format and check for value
-        console.log(version)
-        IMAGES.forEach((image) => {
-            if (parseInt(version["value"]) > image.getLastUpdate())
-                image.updateComments();
-        });
-        TIMEOUT = setTimeout(updateImages, 15000);
+    function getSpinnersIds(){
+        let spinnersIdsArr = []
+        IMAGES.forEach((img)=>{
+            spinnersIdsArr.push(`${img.getDate()}-spinner`)
+        })
+        return spinnersIdsArr
     }
+    //
+    // function handleUpdateResponse(version) {
+    //     //should validate returned version format and check for value
+    //     IMAGES.forEach((image) => {
+    //         if (parseInt(version["value"]) > image.getLastUpdate())
+    //             image.updateComments();
+    //     });
+    //     TIMEOUT = setTimeout(updateImages, 15000);
+    // }
 
 
     /**
@@ -361,13 +380,13 @@
         return content.trim().length > 0;
     }
 
-    function handleCommentsUpdateResponse(comments, currentImage) {
-        currentImage.setComments(comments)
-    }
+    // function handleCommentsUpdateResponse(comments, currentImage) {
+    //     currentImage.setComments(comments)
+    // }
 
-    function responseToChangeComments(_, currentImage) {
-        currentImage.updateComments()
-    }
+    // function responseToChangeComments(_, currentImage) {
+    //     currentImage.updateComments()
+    // }
     /**
      * This function is checking if there is need to split the explanation (explanation > MAX_WORDS_NUMBER_IN_DESCRIPTION)
      * It returns the result of the splitting if there was one.
@@ -416,9 +435,11 @@
             // (you could give them to #setHtmlComments).
             //this.#comments = comments
             this.#deleteComments(comments.delete)
-            let sortedComments = comments.add
-            sortedComments.sort((a,b)=>a.comment.id - b.comment.id)
-            this.#setHtmlComments(sortedComments)
+            if(comments.add && comments.add.length) {
+                let sortedComments = comments.add
+                sortedComments.sort((a, b) => {console.log(a.comment.id, b.comment.id); return a.comment.id - b.comment.id})
+                this.#setHtmlComments(sortedComments)
+            }
             this.#lastUpdate = lastUpdate;
         }
 
@@ -437,15 +458,16 @@
         }
         #deleteComments(commentsToDelete){
             const imagePointer = this;
-            commentsToDelete.forEach((id)=>{
-                if (imagePointer.#comments.has(id)){
-                    imagePointer.#comments.get(id).remove()
-                    imagePointer.#comments.delete(id)
-                }
-            })
+            if (commentsToDelete) {
+                commentsToDelete.forEach((id) => {
+                    if (imagePointer.#comments.has(id)) {
+                        imagePointer.#comments.get(id).remove()
+                        imagePointer.#comments.delete(id)
+                    }
+                })
+            }
         }
         #setHtmlComments(newComments) {
-            this.#commentsElement.innerText = ""
             const imagePointer = this;
             newComments.forEach(function (val) {
                 let li = document.createElement('li');
@@ -461,6 +483,7 @@
         }
 
         #getUserDataCol(val) {
+            console.log(val)
             let usersDataCol = document.createElement('div');
             usersDataCol.className = "col-12 col-lg-3 col-xl-2"
             let username = document.createElement('div');
@@ -636,7 +659,7 @@
                     document.getElementById(`${this.#date}-div`).classList.add("d-none")
                     document.getElementById(`${this.#date}-comment_button`).classList.remove("d-none")
 
-                    fetchRequest(`${COMMENTS_SERVER_URL}`, responseToChangeComments,`${this.#date}-spinner`, this, message)
+                    fetchRequest(`${COMMENTS_SERVER_URL}`, updateImages,[`${this.#date}-spinner`], undefined, message)
                 }
                 else{
                     errorHandler(new Error("Invalid comment content. Comment couldn't be empty or bigger than 128 characters"))
@@ -727,17 +750,17 @@
                 let params = new URLSearchParams();
                 params.append("id", id.toString())
                 let message = {method: "DELETE"}
-                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`, responseToChangeComments, `${this.#date}-spinner`, this, message)
+                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,updateImages, [`${this.#date}-spinner`], undefined, message)
             });
             buttonDiv.appendChild(button)
             return buttonDiv;
         }
 
-        updateComments() {
-            let params = new URLSearchParams()
-            params.append("images", `["${this.#date}"]`)
-            fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`, handleCommentsUpdateResponse,`${this.#date}-spinner`, this)
-        }
+        // updateComments() {
+        //     let params = new URLSearchParams()
+        //     params.append("images", `["${this.#date}"]`)
+        //     fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`, handleCommentsUpdateResponse,`${this.#date}-spinner`, this)
+        // }
 
         getLastUpdate() {
             return this.#lastUpdate;

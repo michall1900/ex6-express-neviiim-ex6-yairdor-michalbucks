@@ -45,7 +45,7 @@ router.post('/', function(req, res, next) {
         let username = req.session.username;
         let userid = req.session.userId;
         return db.Comments.create({picDate, username, userid, content})
-            .then((comment) => res.send(comment))
+            .then((comment) => res.json({status:200}))//res.send(comment))
             .catch((err) => {
                 ErrorMsg(res,constants.CREATE_COMMENT);
             })
@@ -56,17 +56,23 @@ router.post('/', function(req, res, next) {
  * The route deletes an image's comment if possible.
  */
 router.delete('/', function(req, res, next) {
+    console.log("here")
     if(validateDeleteRequestInput(req,res)) {
         const index = parseInt(req.query.id);
         let userid = req.session.userId;
         return db.Comments.findOne({where: {id: index}})
             .then((comment) => {
+                if (!comment)
+                    throw new Error("Comment not found, maybe deleted before")
                 if (comment.userid !== userid) {
                     updateCommentDeletion(comment);
                     //comment.destroy({force: true});
                 }
+                else{
+                    throw new Error("You can't delete this comment")
+                }
             })
-            .then(() => res.send({index}))
+            .then(() => res.json({status:200}))//res.send({index}))
             .catch((err) => {
                 ErrorMsg(res,constants.DELETE_COMMENT);
             })
@@ -79,7 +85,10 @@ router.delete('/', function(req, res, next) {
 router.get('/update', (req, res) =>{
     if(validateGetRequest(req,res) && validateAllDates(req,res)) {
         let dataArray = JSON.parse(req.query.images);
-        let timeStamp = dataArray.pop();
+        let timeStamp = new Date(dataArray.pop());
+        const sequelizeTimestamp = Sequelize.literal(`'${timeStamp.toISOString()}'`);
+        console.log(timeStamp)
+        console.log(sequelizeTimestamp)
             db.Comments.findAll({
                 //attributes: {exclude: ['userid']},
                 where: {
@@ -88,17 +97,17 @@ router.get('/update', (req, res) =>{
                     },
                     [Sequelize.Op.or]: [
                         { createdAt:{
-                            [Sequelize.Op.gte]: timeStamp
+                            [Sequelize.Op.gte]: sequelizeTimestamp
                         }},
                         { deletionTime:{
                             [Sequelize.Op.not] : null,
-                            [Sequelize.Op.gte]: timeStamp
+                            [Sequelize.Op.gte]: sequelizeTimestamp
                             }}
                     ]
                 }
             }).then((comments) => {
                 res.json({
-                    "comments":parseComments(comments), "lastUpdate": findLastUpdate()})
+                    "comments":parseComments(comments,true,req.session.userId), "lastUpdate": findLastUpdate(comments)})
                 //res.send(parseComments(comments));
             })
                 .catch((err)=>{
@@ -111,6 +120,7 @@ router.get('/update', (req, res) =>{
  *
  */
 function parseComments(comments, isNeedToReceiveDelete,userId){
+    console.log(!!comments.length)
     let ans = {};
     for (let comment of comments){
         let currentUserId = comment.userid
@@ -119,7 +129,7 @@ function parseComments(comments, isNeedToReceiveDelete,userId){
             ans[comment.picDate] = {"add": [], "delete": []}
         }
         if (!comment.deletionTime){
-            ans[comment.picDate]["add"].push({"comment":comment,"couldDelete": currentUserId===userId});
+            ans[comment.picDate]["add"].push({"comment":comment,"couldDelete": currentUserId===userId.toString()});
         }
         else if(isNeedToReceiveDelete){
             ans[comment.picDate]["delete"].push(comment.id);
@@ -144,7 +154,7 @@ function updateCommentDeletion(comment){
  * @param res The response.
  */
 function validateGetRequest(req, res){
-    if(req.query === undefined || req.query.images === undefined) {
+    if(req.query === undefined || req.query.images === undefined || !req.query.images.length) {
         ErrorMsg(res,constants.MISSING_IMAGES);
         return false;
     }
@@ -156,12 +166,10 @@ function validateGetRequest(req, res){
  */
 function validateAllDates(req,res){
     try{
-        console.log(req.query.images)
+        //req.query.images[req.query.images.length-1] = JSON.stringify(req.query.images)
         let dataArray = JSON.parse(req.query.images);
         for(let val of dataArray){
             let tempDate = new Date(val).toISOString().substring(0,10);
-            console.log(`temp data = ${tempDate} ,   val = ${val}`)
-            console.log(`temp data : ${new Date(tempDate).valueOf()} date: ${new Date().valueOf()}`)
             if ( !validations.isValidDate(tempDate)|| new Date(tempDate).valueOf() > new Date().valueOf()){
                 ErrorMsg(res,constants.DATES_INVALID_FORMAT);
                 return false;
@@ -214,11 +222,11 @@ function ErrorMsg(res, err){
     res.send(err);
 }
 
-async function findLastUpdate(comments=[]){
+function findLastUpdate(comments=[]){
     const max = comments.reduce((max, record)=>{
-        return new Date(record.updatedAt) > new Date(max.updatedAt)? record:max
+        return new Date(record.updatedAt).valueOf() > new Date(max.updatedAt).valueOf()? record:max
     },{updatedAt:new Date(0)})
-    return (max.updatedAt === new Date(0))? new Date().toISOString(): max.updatedAt.toISOString()
+    return (max.updatedAt.toISOString() === new Date(0).toISOString())? new Date().toISOString(): max.updatedAt.toISOString()
 }
 
 module.exports = router;
