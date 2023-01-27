@@ -25,7 +25,7 @@ router.get('/', function(req, res, next) {
                 // }
             }
         }).then((comments) => {
-            console.log(comments)
+            //console.log(comments)
             //res.send(comments)
             res.json({
                 "comments":parseComments(comments,false,req.session.userId), "lastUpdate": findLastUpdate(comments)});
@@ -56,13 +56,13 @@ router.post('/', function(req, res, next) {
  * The route deletes an image's comment if possible.
  */
 router.delete('/', function(req, res, next) {
-    console.log("here")
     if(validateDeleteRequestInput(req,res)) {
         const index = parseInt(req.query.id);
         let userid = req.session.userId;
         return db.Comments.findOne({where: {id: index}})
             .then((comment) => {
-                if (!comment)
+                console.log(comment)
+                if (!comment || comment.deletionTime)
                     throw new Error("Comment not found, maybe deleted before")
                 if (comment.userid !== userid) {
                     updateCommentDeletion(comment);
@@ -85,10 +85,11 @@ router.delete('/', function(req, res, next) {
 router.get('/update', (req, res) =>{
     if(validateGetRequest(req,res) && validateAllDates(req,res)) {
         let dataArray = JSON.parse(req.query.images);
-        let timeStamp = new Date(dataArray.pop());
-        const sequelizeTimestamp = Sequelize.literal(`'${timeStamp.toISOString()}'`);
-        console.log(timeStamp)
-        console.log(sequelizeTimestamp)
+        let timeStamp= dataArray.pop()
+        //let timeStamp = new Date(dataArray.pop());
+        //const sequelizeTimestamp = Sequelize.literal(`'${timeStamp.toISOString()}'`);
+        //console.log(timeStamp)
+        //console.log(sequelizeTimestamp)
             db.Comments.findAll({
                 //attributes: {exclude: ['userid']},
                 where: {
@@ -97,17 +98,17 @@ router.get('/update', (req, res) =>{
                     },
                     [Sequelize.Op.or]: [
                         { createdAt:{
-                            [Sequelize.Op.gte]: sequelizeTimestamp
+                            [Sequelize.Op.gt]: timeStamp//sequelizeTimestamp
                         }},
                         { deletionTime:{
                             [Sequelize.Op.not] : null,
-                            [Sequelize.Op.gte]: sequelizeTimestamp
+                            [Sequelize.Op.gt]: timeStamp//sequelizeTimestamp
                             }}
                     ]
                 }
             }).then((comments) => {
                 res.json({
-                    "comments":parseComments(comments,true,req.session.userId), "lastUpdate": findLastUpdate(comments)})
+                    "comments":parseComments(comments,true,req.session.userId), "lastUpdate": findLastUpdate(comments,timeStamp)})
                 //res.send(parseComments(comments));
             })
                 .catch((err)=>{
@@ -135,6 +136,7 @@ function parseComments(comments, isNeedToReceiveDelete,userId){
             ans[comment.picDate]["delete"].push(comment.id);
         }
     }
+    console.log(ans)
     return ans;
 }
 
@@ -222,11 +224,14 @@ function ErrorMsg(res, err){
     res.send(err);
 }
 
-function findLastUpdate(comments=[]){
+function findLastUpdate(comments=[], timeStamp="0"){
+
     const max = comments.reduce((max, record)=>{
         return new Date(record.updatedAt).valueOf() > new Date(max.updatedAt).valueOf()? record:max
     },{updatedAt:new Date(0)})
-    return (max.updatedAt.toISOString() === new Date(0).toISOString())? new Date().toISOString(): max.updatedAt.toISOString()
+    if (max.updatedAt.toISOString() !== new Date(0).toISOString())
+        return max.updatedAt.toISOString()
+    return timeStamp
 }
 
 module.exports = router;

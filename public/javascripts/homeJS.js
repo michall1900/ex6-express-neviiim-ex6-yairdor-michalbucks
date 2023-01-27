@@ -248,13 +248,11 @@
     function setComments(comments, startIndex) {
         //validateComments(comments)
         clearTimeout(TIMEOUT)
-        IMAGES.slice(startIndex).forEach((img) => {
-            img.setComments(getImageComments(comments.comments, img.getDate()), comments.lastUpdate)
-        })
-        console.log("============================",comments.lastUpdate, TIMESTAMP)
         if(comments.lastUpdate && comments.lastUpdate > TIMESTAMP) {
+            IMAGES.slice(startIndex).forEach((img) => {
+                img.setComments(getImageComments(comments.comments, img.getDate()), comments.lastUpdate)
+            })
             TIMESTAMP = comments.lastUpdate
-            console.log(TIMESTAMP)
         }
         TIMEOUT = setTimeout(updateImages, 15000);
     }
@@ -478,8 +476,9 @@
                 div.appendChild(imagePointer.#getContentAndDeleteCol(val))
                 li.appendChild(div)
                 imagePointer.#commentsElement.appendChild(li);
-                imagePointer.#comments.set(val.id, li);
+                imagePointer.#comments.set(val.comment.id, li);
             })
+            console.log(this.#comments)
         }
 
         #getUserDataCol(val) {
@@ -515,6 +514,7 @@
             let imageRow = document.createElement("div");
             imageRow.className = "row";
             imageRow.appendChild(this.#getName());
+            imageRow.appendChild(this.#getSpinner());
             imageRow.appendChild(this.#getImage());
             imageRow.appendChild(this.#getInfo());
             this.#imageHtml.appendChild(imageRow);
@@ -532,7 +532,7 @@
         #getName() {
             let title = document.createElement("h3");
             title.innerText = this.#data.title;
-            title.className = "col-12";
+            title.className = "col-10";
             return title;
         }
 
@@ -566,7 +566,6 @@
             let secondCol = document.createElement("div")
             firstCol.className = "col-12 text-break"
             secondCol.innerText = `Date: ${this.#date}`
-
             row.appendChild(firstCol)
             row.appendChild(secondCol)
             row.appendChild(this.#getExplanation())
@@ -719,7 +718,6 @@
             this.#commentsElement.className = `list-group container`;
             this.#commentsElement.id = `${this.#date}-show-all-comments`;
             ans.appendChild(this.#commentsElement)
-            ans.appendChild(this.#getSpinner())
             ans.appendChild(this.#getCommentButton());
             ans.appendChild(this.#getCommentTextField());
             return ans;
@@ -727,10 +725,10 @@
 
         #getSpinner(){
             const div = document.createElement("div")
-            div.className = "text-align-center d-none"
+            div.className = "d-none col-2 me-auto"
             div.id = `${this.#date}-spinner`
             const spinner = document.createElement("div")
-            spinner.className="spinner-border"
+            spinner.className="spinner-grow"
             div.appendChild(spinner)
             return div
         }
