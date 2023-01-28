@@ -54,7 +54,7 @@ exports.commentsDelete = (req,res) => {
             .then((comment) => {
                 if (!comment || comment.deletionTime)
                     throw new Error(constants.COMMENT_NOT_FOUND)
-                if (comment.userid !== userid) {
+                else if (comment.userid === userid.toString()) {
                     commentsController.updateCommentDeletion(comment);
                 }
                 else{

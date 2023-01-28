@@ -1,14 +1,14 @@
-const utilities = require("../modules/utilities.js")
+
 exports.getHome = (req, res)=>{
-    console.log(req.data.error)
     res.render('home',{
         tabTitle: "Home",
-        username: req.session.username,//utilities.stringToTitle(req.session.username),
+        username: req.session.username,
+        token: req.session.userId.toString(),
         error: req.data.error
     })
 }
 
 exports.getLogout = (req,res) =>{
-    req.session.isLogin = false
+    req.session.destroy();
     res.redirect("/")
 }

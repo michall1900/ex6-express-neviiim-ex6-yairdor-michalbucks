@@ -1,6 +1,8 @@
 (function () {
     let TIMEOUT = setTimeout(updateImagesComments, 15000);
     let IMAGES = [];
+    const TOKEN_ID = "token"
+    let TOKEN
     const APIKEY = "aKRnQfhPmxqeskcpdkcfomXKcIGbW1p8FFvuQhsa";
     const IMAGES_TO_FETCH = 5;
     let currStartDate = "";
@@ -71,14 +73,14 @@
         }
 
         const isValidExistDate = (date)=>{
-            return isValidDate(date) && new Date(date) <= new Date() && IMAGES.find(currentDate => currentDate === date)
+            return isValidDate(date) && !!IMAGES.find(img => img.getDate() === date)
         }
         const isAllKeysAreValidDates = (keys)=>{
-            return keys.every((val)=>{isValidExistDate(val)})
+            return keys.every((val)=> isValidExistDate(val))
         }
         const isValidAddValue = (addValues)=>{
-            return addValues.every((elem)=>{return elem.couldDelete instanceof Boolean && elem.comment && elem.comment.username &&
-                isValidDate(elem.comment.picDate) && elem.comment.id && elem.comment.content && isValidTimeStamp(elem.comment.updatedAt)})
+            return addValues.every((elem)=>{return (typeof elem.couldDelete === "boolean" && elem.comment && elem.comment.username
+                && elem.comment.id && elem.comment.content && isValidTimeStamp(elem.comment.updatedAt))})
 
         }
         const isValidCommentStructure = (CommentsValues) =>{
@@ -87,13 +89,9 @@
         }
         const isValidCommentsObject = (commentsObj)=> {
             return (isAllKeysAreValidDates(Object.keys(commentsObj)) &&
-                Object.values(commentsObj).every((val) => {isValidCommentStructure(val)}))
+                Object.values(commentsObj).every((val) =>
+                    isValidCommentStructure(val)))
         }
-                //     val.add && val.add instanceof Array &&
-                // val.add.every((elem)=>{elem.couldDelete instanceof Boolean && elem.comment &&
-                // isValidDate(elem.comment.picDate) && elem.comment.id &&
-                // elem.comment.content && isValidDate(elem.updatedAt)})&& val.delete && val.delete.every((id)=>{isValidId(id)})}))
-                // }
 
         return {
             isValidURL,
@@ -112,6 +110,9 @@
         MODAL_ERROR_BUTTON_ELEMENT = document.getElementById("errorModalBtn");
         USER_DATE_ELEMENT = document.getElementById("pictureDate");
         CONTENT_ELEMENT = document.getElementById("content-list");
+        let tokenElement = document.getElementById(TOKEN_ID)
+        TOKEN = tokenElement.innerText
+        tokenElement.remove()
         document.querySelectorAll(`#closeModal1, #closeModal2`).forEach((elem)=>{
             elem.addEventListener("click",(event)=>{
                 MODAL_ERROR_MESSAGE_ELEMENT.innerText = ""
@@ -144,12 +145,8 @@
         // need to fix this function
         if (error.message) {
             const [status, errorMsg] = [...error.message.split(",")]
-            if (status.includes("301") || status.includes("302")) {
-                //do redirect from client and display error message
-                return
-            } else {
-                MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${errorMsg??error}`
-            }
+            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${errorMsg??error}`
+
         } else {
             MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${error.msg??error}`
         }
@@ -172,8 +169,6 @@
         }
         else if((response.status === 301 || response.status===302) && !isNasaRequest){
             let data = await response.json()
-            console.log(data)
-            console.log(data.redirect)
             window.location.href= data.redirect
         }
         else if (response.status === 404 && !isNasaRequest){
@@ -207,8 +202,11 @@
                 elem.classList.remove("d-none")
             }
         })
-        !request.headers? request.headers = {'X-Is-Fetch': 'true'} : request.headers['X-Is-Fetch'] = 'true'
-        console.log(request)
+        if (!request.headers){
+            request.headers = {}
+        }
+        request.headers['X-Is-Fetch'] = 'true'
+        request.headers['token'] = `${TOKEN}`
         try {
             let res = await fetch(url,request)
             res = await status(res,url)
@@ -375,7 +373,6 @@
         return {isSplit: isSplit, beforeMore:beforeMore, afterMore:afterMore}
     }
     class Image {
-        #lastUpdate
         #date
         #data
         #comments = new Map() //key=comment Id, value = element
@@ -384,7 +381,6 @@
         #commentsElement
 
         constructor(item) {
-            this.#lastUpdate = 0
             this.#date = item.date;
             this.#data = item;
             this.#displayComments = false;
@@ -394,10 +390,9 @@
             this.#deleteComments(comments.delete)
             if(comments.add && comments.add.length) {
                 let sortedComments = comments.add
-                sortedComments.sort((a, b) => {console.log(a.comment.id, b.comment.id); return a.comment.id - b.comment.id})
+                sortedComments.sort((a, b) => {return a.comment.id - b.comment.id})
                 this.#setHtmlComments(sortedComments)
             }
-            this.#lastUpdate = lastUpdate;
         }
 
         getImageHtml() {
@@ -437,11 +432,9 @@
                 imagePointer.#commentsElement.appendChild(li);
                 imagePointer.#comments.set(val.comment.id, li);
             })
-            console.log(this.#comments)
         }
 
         #getUserDataCol(val) {
-            console.log(val)
             let usersDataCol = document.createElement('div');
             usersDataCol.className = "col-12 col-lg-3 col-xl-2"
             let username = document.createElement('div');

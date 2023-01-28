@@ -21,5 +21,4 @@ exports.getErrorCookie = (req, res, next) => {
   req.data.error = cookies.get(cookiesHandler.ERROR_COOKIE_NAME)
   cookies.set(cookiesHandler.ERROR_COOKIE_NAME,'',{maxAge:0})
   next()
-
 }

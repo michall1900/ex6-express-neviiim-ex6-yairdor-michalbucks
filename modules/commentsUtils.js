@@ -13,14 +13,16 @@ const commentsUtils = (function() {
      */
     const parseComments = (comments, isNeedToReceiveDelete,userId) =>{
         let ans = {};
+        const keysToKeep = ["username","content","id","updatedAt"]
         for (let comment of comments){
-            let currentUserId = comment.userid
-            delete comment.userid
+            let newComment = Object.fromEntries(Object.entries(comment.dataValues)
+                .filter(([key, _]) => keysToKeep.includes(key))
+            );
             if (ans[comment.picDate] === undefined){
                 ans[comment.picDate] = {"add": [], "delete": []}
             }
             if (!comment.deletionTime){
-                ans[comment.picDate]["add"].push({"comment":comment,"couldDelete": currentUserId===userId.toString()});
+                ans[comment.picDate]["add"].push({"comment":newComment,"couldDelete": comment.userid===userId.toString()});
             }
             else if(isNeedToReceiveDelete){
                 ans[comment.picDate]["delete"].push(comment.id);

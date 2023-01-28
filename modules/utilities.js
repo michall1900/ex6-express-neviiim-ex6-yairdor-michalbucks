@@ -1,4 +1,8 @@
 const validation = require("./validationModule.js")
+const session = require("express-session");
+const cookiesHandler = require("./cookiesHandler");
+const constants = require("./constantsErrorMessageModule");
+
 const utilitiesModule = (function(){
 
     /**
@@ -16,7 +20,23 @@ const utilitiesModule = (function(){
         return convertedStr
     }
 
-    return {trimAndLower, stringToTitle}
+    const buildSession = ()=>{
+        console.log("here")
+        return session({
+            secret:"somesecretkey",
+            resave: false, // Force save of session for each request
+            saveUninitialized: false, // Save a session that is new, but has not been modified
+            cookie: {maxAge: Number.MAX_SAFE_INTEGER }
+        })
+    }
+
+    const userCouldntGetPage =(req,res, errorMsg, redirectAdd,isFetch)=>{
+        if (errorMsg)
+            cookiesHandler.createErrorCookie(req,res,errorMsg)
+        isFetch? res.status(302).json({redirect:redirectAdd}):res.redirect(redirectAdd)
+    }
+
+    return {trimAndLower, stringToTitle, buildSession, userCouldntGetPage}
 })();
 
 module.exports = utilitiesModule

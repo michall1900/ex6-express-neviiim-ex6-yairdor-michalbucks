@@ -22,7 +22,7 @@ const apiRoutes = require('./routes/api');
 const registerRoutes = require('./routes/register');
 const forAllRoutes = require('./routes/forAll');
 const homeRoute = require('./routes/home');
-const session = require("express-session");
+const buildSession = require("./modules/utilities.js").buildSession;
 
 
 // plug in the body parser middleware and static middleware
@@ -30,12 +30,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-app.use(session({
-    secret:"somesecretkey",
-    resave: false, // Force save of session for each request
-    saveUninitialized: false, // Save a session that is new, but has not been modified
-    cookie: {maxAge: Number.MAX_SAFE_INTEGER }
-}));
+app.use(buildSession());
 
 
 app.use(logger('dev'));
