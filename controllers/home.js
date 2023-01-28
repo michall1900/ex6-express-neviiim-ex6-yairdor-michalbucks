@@ -1,5 +1,6 @@
 const utilities = require("../modules/utilities.js")
 exports.getHome = (req, res)=>{
+    console.log(req.data.error)
     res.render('home',{
         tabTitle: "Home",
         username: req.session.username,//utilities.stringToTitle(req.session.username),

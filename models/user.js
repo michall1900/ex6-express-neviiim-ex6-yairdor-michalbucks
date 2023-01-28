@@ -1,6 +1,6 @@
 'use strict';
 const constants = require("../modules/constantsErrorMessageModule.js");
-const isString  = require("../modules/utilities.js").isString
+const isString  = require("../modules/validationModule.js").isString
 const {
   Model
 } = require('sequelize');

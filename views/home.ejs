@@ -39,7 +39,7 @@
                 <h5 class="modal-title" id="contentErrorModal">Error</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="closeModal1"></button>
             </div>
-            <div class="modal-body text-danger h4" id="errorMessage">
+            <div class="modal-body text-danger h4" id="errorMessage"><%if(error){%><%-error%><%}%>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeModal2">Close</button>

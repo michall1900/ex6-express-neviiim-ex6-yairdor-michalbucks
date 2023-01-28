@@ -4,7 +4,7 @@ const Cookies = require("cookies");
  * This module is handle with cookies.
  * @type {{ERROR_COOKIE_NAME: string, REGISTER_SUCCESS: string, EXPIRED_USER_COOKIE: string, clearUserDataCookie: clearUserDataCookie, USER_DATA_KEYS: string[], createErrorCookie: createErrorCookie, createUserDataCookie: createUserDataCookie}}
  */
-module.exports = (function(){
+const cookiesHandlerModule = (function(){
     const ERROR_COOKIE_NAME = 'ErrorCookie'
     const REGISTER_SUCCESS = "Registration successful, you can now login"
     const USER_DATA_KEYS = ['email', 'fName','lName']
@@ -76,3 +76,5 @@ module.exports = (function(){
         clearUserDataCookie
     }
 })();
+
+module.exports = cookiesHandlerModule

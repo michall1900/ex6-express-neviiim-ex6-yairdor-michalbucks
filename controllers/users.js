@@ -1,8 +1,6 @@
-const validation = require("../modules/validationModule.js");
 const cookiesHandler = require("../modules/cookiesHandler.js");
 const Cookies = require('cookies');
 const db = require('../models');
-const constants = require("../modules/constantsErrorMessageModule.js");
 const dbHandler = require("../modules/userDbHandlerModule.js")
 const utilities = require("../modules/utilities.js")
 const USER_PARAMS_INDEX = {"email":0, "fName":1, "lName":2};

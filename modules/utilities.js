@@ -1,13 +1,5 @@
-
+const validation = require("./validationModule.js")
 const utilitiesModule = (function(){
-    /**
-     * Return if object is a string or not.
-     * @param object
-     * @returns {boolean}
-     */
-    const isString= (object)=>{
-        return (!!object instanceof String || typeof (object) === "string")
-    }
 
     /**
      * The function is doing trim() and to lower case to the received string.
@@ -15,16 +7,16 @@ const utilitiesModule = (function(){
      * @returns {string|*}
      */
     const trimAndLower = (string)=>{
-        return (isString(string))? string.trim().toLowerCase(): string
+        return (validation.isString(string))? string.trim().toLowerCase(): string
     }
 
     const stringToTitle = (string) =>{
-        let convertedStr = (isString(string))? string.split(" ").map((str)=>str.charAt(0).toUpperCase() +str.slice(1)).reverse().join(" ") : string
+        let convertedStr = (validation.isString(string))? string.split(" ").map((str)=>str.charAt(0).toUpperCase() +str.slice(1)).reverse().join(" ") : string
         console.log(convertedStr)
         return convertedStr
     }
 
-    return {trimAndLower,isString, stringToTitle}
+    return {trimAndLower, stringToTitle}
 })();
 
 module.exports = utilitiesModule
