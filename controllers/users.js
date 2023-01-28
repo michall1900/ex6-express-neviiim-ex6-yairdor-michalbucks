@@ -4,6 +4,7 @@ const db = require('../models');
 const dbHandler = require("../modules/userDbHandlerModule.js")
 const utilities = require("../modules/utilities.js")
 const USER_PARAMS_INDEX = {"email":0, "fName":1, "lName":2};
+const bcrypt = require('bcrypt');
 
 /**
  * Route that let us see users table. It's for private use, not part of the recommendations.

@@ -21,6 +21,7 @@
     let CONTENT_ELEMENT;
     const MAX_WORDS_NUMBER_IN_DESCRIPTION = 30
     let TIMESTAMP = "0"
+    const INVALID_DATE_ERROR ="Error, you picked invalid date"
 
     /**
      * This module is validates fields.
@@ -111,7 +112,7 @@
         USER_DATE_ELEMENT = document.getElementById("pictureDate");
         CONTENT_ELEMENT = document.getElementById("content-list");
         let tokenElement = document.getElementById(TOKEN_ID)
-        TOKEN = tokenElement.innerText
+        TOKEN = (tokenElement && tokenElement.innerText.match(/[a-zA-Z0-9]+/))?  tokenElement.innerText:""
         tokenElement.remove()
         document.querySelectorAll(`#closeModal1, #closeModal2`).forEach((elem)=>{
             elem.addEventListener("click",(event)=>{
@@ -148,7 +149,7 @@
             MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${errorMsg??error}`
 
         } else {
-            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${error.msg??error}`
+            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${error}`
         }
         MODAL_ERROR_BUTTON_ELEMENT.click()
 
@@ -186,9 +187,17 @@
             })
         }
         else {
-            return response.text().then(text => {
-                throw new Error(`status: ${response.status} ,error: ${text}`)
-            })
+            try{
+                response.json().then((jsonData)=>{
+                    return Promise.reject(new Error(`status ${jsonData.code??jsonData.status??"unknown"}:
+                     ${jsonData.msg?? jsonData.message??((isNasaRequest)? ERROR_WITH_NASA_SERVER: ERROR_WITH_API_SERVER)}`))
+                })
+            }
+            catch {
+                return response.text().then(text => {
+                    return Promise.reject(`status ${response.status}: error: ${text}`)
+                })
+            }
         }
     }
 
@@ -215,13 +224,29 @@
                 responseHandler(data, dataForResHandler)
             }
         } catch (err) {
-            SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
+            if(url.includes(NASA_API_URL))
+                SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
             errorHandler(err)
         }
-        spinnerElements.forEach((spinnerElem)=>{
-            spinnerElem.classList.add("d-none")
-        })
+        finally {
+            spinnerElements.forEach((spinnerElem)=>{
+                spinnerElem.classList.add("d-none")
+            })
+        }
 
+        // fetch(url, request)
+        //     .then((res) => status(res, url))
+        //     .then(res => res.json())
+        //     .then(data => responseHandler(data, dataForResHandler))
+        //     .catch((err) => {
+        //         if (url.includes(NASA_API_URL))
+        //             SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
+        //         errorHandler(err)
+        //     })
+        //     .finally (()=>{
+        //         spinnerElements.forEach((spinnerElem)=>{
+        //             spinnerElem.classList.add("d-none")})
+        //     })
 
     }
 
@@ -234,7 +259,7 @@
             IMAGES = [];
             sendNasaRequests()
         } else {
-            errorHandler(new Error("Error, you picked invalid date"))
+            errorHandler(new Error(INVALID_DATE_ERROR))
         }
     }
 
@@ -277,12 +302,12 @@
     function validateNasaResponse(data) {
         if (!data || !(data instanceof Array) || !data.length ||
             !data.every((element) => validateModule.isValidURL(element.url) && validateModule.isValidDate(element.date)))
-            throw (new Error("Error occurred while getting Nasa response"))
+            throw (new Error(ERROR_WITH_NASA_SERVER))
     }
 
     function setComments(comments, startIndex) {
         validateComments(comments)
-        clearTimeout(TIMEOUT)
+
         IMAGES.slice(startIndex).forEach((img) => {
             img.setComments(getImageComments(comments.comments, img.getDate()), comments.lastUpdate)
         })
@@ -310,7 +335,7 @@
      * The function gets from the server the time stamp of its last database modification.
      */
     function updateImagesComments() {
-
+        clearTimeout(TIMEOUT)
         let params = new URLSearchParams()
         //we should replace it with range of dates and not all of the dates, just like nasa that taking start and end.
         let dates = getPicsDates(IMAGES)

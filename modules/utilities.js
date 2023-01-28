@@ -15,9 +15,7 @@ const utilitiesModule = (function(){
     }
 
     const stringToTitle = (string) =>{
-        let convertedStr = (validation.isString(string))? string.split(" ").map((str)=>str.charAt(0).toUpperCase() +str.slice(1)).reverse().join(" ") : string
-        console.log(convertedStr)
-        return convertedStr
+        return (validation.isString(string))? string.split(" ").map((str)=>str.charAt(0).toUpperCase() +str.slice(1)).reverse().join(" ") : string
     }
 
     const buildSession = ()=>{
@@ -32,7 +30,7 @@ const utilitiesModule = (function(){
 
     const userCouldntGetPage =(req,res, errorMsg, redirectAdd,isFetch)=>{
         if (errorMsg)
-            cookiesHandler.createErrorCookie(req,res,errorMsg)
+            cookiesHandler.createErrorCookie(req,res, `${errorMsg} ${constants.WRONG_ADDRESS}`)
         isFetch? res.status(302).json({redirect:redirectAdd}):res.redirect(redirectAdd)
     }
 

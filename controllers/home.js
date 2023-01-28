@@ -1,3 +1,12 @@
+//const userCouldntGetPage = require("../modules/utilities.js").userCouldntGetPage;
+
+//const constants = require("../modules/constantsErrorMessageModule");
+// exports.checkLogin = (req,res,next)=>{
+//     const isFetch = req.headers && req.headers['x-is-fetch'] === 'true'
+//     if (!req.session.isLogin)
+//         userCouldntGetPage(req,res, constants.NOT_LOGIN_ERROR, "/",isFetch)
+//     else if()
+// }
 
 exports.getHome = (req, res)=>{
     res.render('home',{
@@ -10,5 +19,5 @@ exports.getHome = (req, res)=>{
 
 exports.getLogout = (req,res) =>{
     req.session.destroy();
-    res.redirect("/")
+    (req.headers && req.headers['x-is-fetch'] === 'true')? res.send(302).json({redirect:'/'}):res.redirect("/")
 }

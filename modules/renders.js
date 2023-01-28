@@ -33,8 +33,8 @@ const renderResponseModule = (function(){
     const getHome = (req, res)=>{
         res.render('home',{
             tabTitle: "Home",
-            username: req.session.username,//utilities.stringToTitle(req.session.username),
-            token: req.session.userid,
+            username: req.session.username,
+            token: req.session.userid.toString(),
             error: req.data.error
         })
     }
@@ -42,7 +42,8 @@ const renderResponseModule = (function(){
     return {
         "renderRegisterPage": renderRegisterPage,
         "renderPasswordPage":renderPasswordPage,
-        "renderLoginPage":renderLoginPage
+        "renderLoginPage":renderLoginPage,
+        "getHome": getHome
     }
 })();
 
