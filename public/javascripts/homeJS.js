@@ -713,14 +713,5 @@
             return buttonDiv;
         }
 
-        // updateComments() {
-        //     let params = new URLSearchParams()
-        //     params.append("images", `["${this.#date}"]`)
-        //     fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`, handleCommentsUpdateResponse,`${this.#date}-spinner`, this)
-        // }
-
-        getLastUpdate() {
-            return this.#lastUpdate;
-        }
     }
 })();
