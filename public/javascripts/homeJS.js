@@ -422,7 +422,8 @@
 
         //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
 
-        params.append("images", `[${getPicsDates(newImages).toString()}]`)
+        //params.append("images", `[${getPicsDates(newImages).toString()}]`)
+        //params.append("images", `[]`)
         fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}?${params.toString()}`,setComments,
             [ProgramGlobalsModule.SPINNER_BACKGROUND_ELEMENT], startIndex)
         ProgramGlobalsModule.SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")

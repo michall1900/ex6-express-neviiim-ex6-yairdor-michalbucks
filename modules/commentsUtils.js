@@ -140,6 +140,10 @@ const commentsUtils = (function() {
             errorMessage+= '</ul>'
             err = errorMessage
         }
+        else if (err instanceof Error)
+            err = err.message
+        else if (!validations.isString(err))
+            err = constants.UNKNOWN_ERROR
         //res.json(err);
         res.json({"status":400, "msg":err})
     }
