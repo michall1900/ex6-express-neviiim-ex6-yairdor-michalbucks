@@ -4,9 +4,7 @@
         <h3 class="col-12"><%= pageTitle %></h3>
         <h5 class="col-12"><%= subTitle %></h5>
     </div>
-    <%if (error){%>
         <div class = "row">
-            <%if(!error.includes("success")){%><h6 class="col-6 text-danger me-auto offset-3 ">Some errors occurred:</h6><%}%>
-            <h6 class="col-6 text-danger me-auto offset-3" id="errorMsg"><%-error%></h6>
+            <%if(error && !error.includes("success")){%><h6 class="col-6 text-danger me-auto offset-3 ">Some errors occurred:</h6><%}%>
+            <h6 class="col-6 text-danger me-auto offset-3" id="errorMsg"><%if (error){%><%-error%><%}%></h6>
         </div>
-    <%}%>
