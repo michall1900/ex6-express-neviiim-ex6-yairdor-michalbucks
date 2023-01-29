@@ -73,8 +73,10 @@ const commentsUtils = (function() {
     const validateAllDates = (req,res) => {
         try{
             let dataArray = JSON.parse(req.query.images);
-            if (!dataArray || !dataArray.length)
-                errorMsg(res,constants.DATES_INVALID_FORMAT);
+            if (!dataArray || !dataArray.length) {
+                errorMsg(res, constants.DATES_INVALID_FORMAT);
+                return false;
+            }
             else{
                 for(let val of dataArray){
                     let tempDate = new Date(val).toISOString().substring(0,10);
@@ -139,9 +141,13 @@ const commentsUtils = (function() {
             errorMessage+= '</ul>'
             err = errorMessage
         }
+        else if (err instanceof Error)
+            err = err.message
+        else if (!validations.isString(err))
+            err = constants.UNKNOWN_ERROR
+        //res.json(err);
         res.json({"status":400, "msg":err})
     }
-
     /**
      * This function finds and returns the last update time among the comments she receives
      * @param comments - comments records
