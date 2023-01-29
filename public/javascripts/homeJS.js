@@ -462,7 +462,6 @@
      * @param comments
      */
     function validateComments(comments) {
-
         if (!comments.comments || !comments.lastUpdate || !validateModule.isValidTimeStamp(comments.lastUpdate) ||
             !validateModule.isValidCommentsObject(comments.comments))
             throw new Error(ProgramGlobalsModule.ERROR_WITH_API_SERVER)
@@ -486,7 +485,7 @@
         let params = new URLSearchParams()
         //we should replace it with range of dates and not all of the dates, just like nasa that taking start and end.
         let dates = getPicsDates(ProgramGlobalsModule.IMAGES)
-        //dates.push(`"${ProgramGlobalsModule.TIMESTAMP}"`)
+        dates.push(`"${ProgramGlobalsModule.TIMESTAMP}"`)
         params.append("images", `[${dates.toString()}]`)
         fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}/update?${params.toString()}`, setComments,getSpinnersElements(),0)
     }
@@ -859,8 +858,7 @@
                     document.getElementById(`${this.#date}-comment_button`).classList.remove("d-none")
 
                     fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}`, updateImagesComments,
-                        [this.#spinnerElement], undefined, message)
-                    //fetchRequest(`/users/register`, setComments,getSpinnersElements(),0)
+                       [this.#spinnerElement], undefined, message)
                 }
                 else{
                     displayError(new Error(ProgramGlobalsModule.INVALID_CONTENT_ERROR))
