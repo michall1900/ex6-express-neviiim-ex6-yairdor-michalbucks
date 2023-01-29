@@ -299,7 +299,6 @@
      * @returns {Promise<void>}
      */
     async function fetchRequest(url, responseHandler,spinnerElementsArr=[], dataForResHandler = undefined, request = {}) {
-        //there needs to be many spinners, for loading comments for adding comments.. it can't be just in full page
         let spinnerElements = getValidWorkingSpinners(spinnerElementsArr)
         request = addRelevantHeaders(request)
 
@@ -371,7 +370,6 @@
      */
     function onChangeDate(event) {
         event.preventDefault();
-        //think about moving it somewhere else
         if (validateModule.isValidDate(ProgramGlobalsModule.USER_DATE_ELEMENT.value)) {
             ProgramGlobalsModule.currStartDate = ProgramGlobalsModule.USER_DATE_ELEMENT.value;
             ProgramGlobalsModule.CONTENT_ELEMENT.innerHTML = "";
@@ -420,7 +418,6 @@
         ProgramGlobalsModule.IMAGES.push(...newImages)
         let params = new URLSearchParams()
 
-        //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
 
         params.append("images", `[${getPicsDates(newImages).toString()}]`)
         fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}?${params.toString()}`,setComments,
@@ -484,7 +481,6 @@
     function updateImagesComments() {
         clearTimeout(ProgramGlobalsModule.TIMEOUT)
         let params = new URLSearchParams()
-        //we should replace it with range of dates and not all of the dates, just like nasa that taking start and end.
         let dates = getPicsDates(ProgramGlobalsModule.IMAGES)
         dates.push(`"${ProgramGlobalsModule.TIMESTAMP}"`)
         params.append("images", `[${dates.toString()}]`)
@@ -858,7 +854,6 @@
 
                     fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}`, updateImagesComments,
                         [this.#spinnerElement], undefined, message)
-                    //fetchRequest(`/users/register`, setComments,getSpinnersElements(),0)
                 }
                 else{
                     displayError(new Error(ProgramGlobalsModule.INVALID_CONTENT_ERROR))
