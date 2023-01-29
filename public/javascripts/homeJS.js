@@ -422,8 +422,7 @@
 
         //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
 
-        //params.append("images", `[${getPicsDates(newImages).toString()}]`)
-        //params.append("images", `[]`)
+        params.append("images", `[${getPicsDates(newImages).toString()}]`)
         fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}?${params.toString()}`,setComments,
             [ProgramGlobalsModule.SPINNER_BACKGROUND_ELEMENT], startIndex)
         ProgramGlobalsModule.SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
@@ -487,7 +486,7 @@
         let params = new URLSearchParams()
         //we should replace it with range of dates and not all of the dates, just like nasa that taking start and end.
         let dates = getPicsDates(ProgramGlobalsModule.IMAGES)
-        dates.push(`"${ProgramGlobalsModule.TIMESTAMP}"`)
+        //dates.push(`"${ProgramGlobalsModule.TIMESTAMP}"`)
         params.append("images", `[${dates.toString()}]`)
         fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}/update?${params.toString()}`, setComments,getSpinnersElements(),0)
     }
@@ -629,15 +628,17 @@
         #setHtmlComments(newComments) {
             const imagePointer = this;
             newComments.forEach(function (val) {
-                let li = document.createElement('li');
-                li.className = "list-group-item mt-2 bg-light border-5 border-white";
-                let div = document.createElement("div")
-                div.className = "row align-items-center"
-                div.appendChild(imagePointer.#getUserDataCol(val.comment))
-                div.appendChild(imagePointer.#getContentAndDeleteCol(val))
-                li.appendChild(div)
-                imagePointer.#commentsElement.appendChild(li);
-                imagePointer.#comments.set(val.comment.id, li);
+                if (!imagePointer.#comments.has(val.comment.id)){
+                    let li = document.createElement('li');
+                    li.className = "list-group-item mt-2 bg-light border-5 border-white";
+                    let div = document.createElement("div")
+                    div.className = "row align-items-center"
+                    div.appendChild(imagePointer.#getUserDataCol(val.comment))
+                    div.appendChild(imagePointer.#getContentAndDeleteCol(val))
+                    li.appendChild(div)
+                    imagePointer.#commentsElement.appendChild(li);
+                    imagePointer.#comments.set(val.comment.id, li);
+                }
             })
         }
 

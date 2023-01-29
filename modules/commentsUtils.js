@@ -74,8 +74,10 @@ const commentsUtils = (function() {
     const validateAllDates = (req,res) => {
         try{
             let dataArray = JSON.parse(req.query.images);
-            if (!dataArray || !dataArray.length)
-                errorMsg(res,constants.DATES_INVALID_FORMAT);
+            if (!dataArray || !dataArray.length) {
+                errorMsg(res, constants.DATES_INVALID_FORMAT);
+                return false
+            }
             else{
                 for(let val of dataArray){
                     let tempDate = new Date(val).toISOString().substring(0,10);
