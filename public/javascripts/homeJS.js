@@ -248,10 +248,10 @@
     function setComments(comments, startIndex) {
         //validateComments(comments)
         clearTimeout(TIMEOUT)
+        IMAGES.slice(startIndex).forEach((img) => {
+            img.setComments(getImageComments(comments.comments, img.getDate()), comments.lastUpdate)
+        })
         if(comments.lastUpdate && comments.lastUpdate > TIMESTAMP) {
-            IMAGES.slice(startIndex).forEach((img) => {
-                img.setComments(getImageComments(comments.comments, img.getDate()), comments.lastUpdate)
-            })
             TIMESTAMP = comments.lastUpdate
         }
         TIMEOUT = setTimeout(updateImages, 15000);
