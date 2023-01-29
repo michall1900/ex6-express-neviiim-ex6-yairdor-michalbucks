@@ -1,7 +1,8 @@
 (function () {
-    let TIMEOUT = setTimeout(updateImages, 15000);
-    let USERNAME = "";
+    let TIMEOUT = setTimeout(updateImagesComments, 15000);
     let IMAGES = [];
+    const TOKEN_ID = "token"
+    let TOKEN
     const APIKEY = "aKRnQfhPmxqeskcpdkcfomXKcIGbW1p8FFvuQhsa";
     const IMAGES_TO_FETCH = 5;
     let currStartDate = "";
@@ -10,6 +11,8 @@
     const SPINNER_BACKGROUND_CLASS_NAME = "spinner-background"
     let SPINNER_BACKGROUND_ELEMENT;
     let SHOW_MORE_BUTTON_ELEMENT;
+    const ERROR_WITH_API_SERVER = "There is an error with api server"
+    const ERROR_WITH_NASA_SERVER = "There is an error with NASA server"
     const MIN_OK_STATUS = 200;
     const MAX_OK_STATUS = 300;
     let MODAL_ERROR_MESSAGE_ELEMENT;
@@ -18,13 +21,13 @@
     let CONTENT_ELEMENT;
     const MAX_WORDS_NUMBER_IN_DESCRIPTION = 30
     let TIMESTAMP = "0"
+    const INVALID_DATE_ERROR ="Error, you picked invalid date"
+
     /**
      * This module is validates fields.
-     * @type {{isValidItemId: (function(*)), isValidCommentsArray: (function(*)), isValidTimeStamp: (function(*)), isValidDate: (function(*)), isString: (function(*)), isValidURL: ((function(*): boolean)|*)}}
+     * @type {{isValidCommentsObject: (function(*)), isValidTimeStamp: (function(*)), isValidDate: (function(*)), isString: (function(*)), isValidURL: ((function(*): boolean)|*)}}
      */
     const validateModule = (function () {
-        const PARAMS_IN_COMMENTS_ARRAY_RESULT = 2
-
         /**
          * this function is checking if the string is valid url address.
          * @param string - any string
@@ -47,7 +50,7 @@
         function isValidDate(object) {
 
             return ((!!object && isString(object) &&
-                object.toString().match(/\d{4}-\d{2}-\d{2}/)) && !!new Date(object))
+                object.toString().match(/\d{4}-\d{2}-\d{2}/)) && isValidTimeStamp(object))
         }
 
 
@@ -62,40 +65,40 @@
 
 
         /**
-         * Return if item id is valid (in url format and define)
-         * @param object
-         * @returns {boolean}
-         */
-        function isValidItemId(object) {
-            return (!!object && isValidDate(object))
-        }
-
-        /**
          * This function is validate time stamp (integer number)
          * @param object
          * @returns {boolean}
          */
         function isValidTimeStamp(object) {
-            return (!!object && !isNaN(object) && Number.isInteger(object))
+            return !!object && (new Date(object) !== "Invalid Date") && new Date (object) <= new Date()
         }
 
-        /**
-         * Return if comments array is valid.
-         * @param object
-         * @returns {false|this is *[]}
-         */
-        function isValidCommentsArray(object) {
-            return (!!object && object instanceof Array && object.every((currentVal) => {
-                return currentVal.length === PARAMS_IN_COMMENTS_ARRAY_RESULT && isValidTimeStamp(currentVal[0])
-            }))
+        const isValidExistDate = (date)=>{
+            return isValidDate(date) && !!IMAGES.find(img => img.getDate() === date)
+        }
+        const isAllKeysAreValidDates = (keys)=>{
+            return keys.every((val)=> isValidExistDate(val))
+        }
+        const isValidAddValue = (addValues)=>{
+            return addValues.every((elem)=>{return (typeof elem.couldDelete === "boolean" && elem.comment && elem.comment.username
+                && elem.comment.id && elem.comment.content && isValidTimeStamp(elem.comment.updatedAt))})
+
+        }
+        const isValidCommentStructure = (CommentsValues) =>{
+            return  CommentsValues.add && CommentsValues.add instanceof Array && isValidAddValue(CommentsValues.add) &&
+                CommentsValues.delete && CommentsValues.delete instanceof Array
+        }
+        const isValidCommentsObject = (commentsObj)=> {
+            return (isAllKeysAreValidDates(Object.keys(commentsObj)) &&
+                Object.values(commentsObj).every((val) =>
+                    isValidCommentStructure(val)))
         }
 
         return {
             isValidURL,
             isValidDate,
-            isValidItemId,
+            isValidCommentsObject,
             isValidTimeStamp,
-            isValidCommentsArray,
             isString
         }
     })();
@@ -107,7 +110,15 @@
         MODAL_ERROR_MESSAGE_ELEMENT = document.getElementById("errorMessage");
         MODAL_ERROR_BUTTON_ELEMENT = document.getElementById("errorModalBtn");
         USER_DATE_ELEMENT = document.getElementById("pictureDate");
-        CONTENT_ELEMENT = document.getElementById("content-list")
+        CONTENT_ELEMENT = document.getElementById("content-list");
+        let tokenElement = document.getElementById(TOKEN_ID)
+        TOKEN = (tokenElement && tokenElement.innerText.match(/[a-zA-Z0-9]+/))?  tokenElement.innerText:""
+        tokenElement.remove()
+        document.querySelectorAll(`#closeModal1, #closeModal2`).forEach((elem)=>{
+            elem.addEventListener("click",(event)=>{
+                MODAL_ERROR_MESSAGE_ELEMENT.innerText = ""
+            })
+        })
         const nasaFormElement = document.getElementById("dateForm");
         nasaFormElement.addEventListener("submit", function (event) {
             onChangeDate(event)
@@ -115,7 +126,6 @@
         SHOW_MORE_BUTTON_ELEMENT.addEventListener("click", function () {
             sendNasaRequests()
         })
-
         //Display current date.
         let todaysDate = new Date();
         USER_DATE_ELEMENT.value = todaysDate.toISOString().substring(0, 10);
@@ -123,6 +133,8 @@
         //Ask for the first time the feed page without user involved.
         const event = new Event("submit", {bubbles: true, cancelable: true});
         nasaFormElement.dispatchEvent(event);
+        if (MODAL_ERROR_MESSAGE_ELEMENT.innerText.match("[a-z]+"))
+            MODAL_ERROR_BUTTON_ELEMENT.click()
     });
 
 
@@ -134,14 +146,10 @@
         // need to fix this function
         if (error.message) {
             const [status, errorMsg] = [...error.message.split(",")]
-            if (status.includes("301") || status.includes("302")) {
-                //do redirect from client and display error message
-                return
-            } else {
-                MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${errorMsg??error}`
-            }
+            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${errorMsg??error}`
+
         } else {
-            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${error.msg??error}`
+            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${error}`
         }
         MODAL_ERROR_BUTTON_ELEMENT.click()
 
@@ -151,20 +159,49 @@
     /**
      * The function is checking an error if there was status code < 200 or >=300.
      * The assumption is the response is a response from server.
-     * @param response - A response object.
-     * @returns {Promise<never>|Promise<unknown>}
+     * @param response
+     * @param url
+     * @returns {Promise<any>}
      */
-    async function status(response) {
+    async function status(response,url) {
+        const isNasaRequest = url.includes(NASA_API_URL)
         if (response.status >= MIN_OK_STATUS && response.status < MAX_OK_STATUS) {
             return response
-        } else {
-            return response.text().then(text => {
-                throw new Error(`status: ${response.status} ,error: ${text}`)
+        }
+        else if((response.status === 301 || response.status===302) && !isNasaRequest){
+            let data = await response.json()
+            window.location.href= data.redirect
+        }
+        else if (response.status === 404 && !isNasaRequest){
+            response.text().then((text)=>{
+                let parser = new DOMParser();
+                let doc = parser.parseFromString(text, "text/html");
+
+                // Select the elements that you want to update
+                let container = document.querySelector('#container');
+                let title = document.querySelector('title');
+
+                // Update the elements
+                container.innerHTML = doc.querySelector('#container').innerHTML;
+                title.innerHTML = doc.querySelector('title').innerHTML;
             })
+        }
+        else {
+            try{
+                response.json().then((jsonData)=>{
+                    return Promise.reject(new Error(`status ${jsonData.code??jsonData.status??"unknown"}:
+                     ${jsonData.msg?? jsonData.message??((isNasaRequest)? ERROR_WITH_NASA_SERVER: ERROR_WITH_API_SERVER)}`))
+                })
+            }
+            catch {
+                return response.text().then(text => {
+                    return Promise.reject(`status ${response.status}: error: ${text}`)
+                })
+            }
         }
     }
 
-    async function fetchRequest(url, responseHandler,spinnerIdArr=[], dataForResHandler = undefined, request = undefined) {
+    async function fetchRequest(url, responseHandler,spinnerIdArr=[], dataForResHandler = undefined, request = {}) {
         //there needs to be many spinners, for loading comments for adding comments.. it can't be just in full page
         let spinnerElements = []
         spinnerIdArr.forEach((spinnerId)=>{
@@ -174,19 +211,42 @@
                 elem.classList.remove("d-none")
             }
         })
-
+        if (!request.headers){
+            request.headers = {}
+        }
+        request.headers['X-Is-Fetch'] = 'true'
+        request.headers['token'] = `${TOKEN}`
         try {
-            let res = await fetch(url, request)
-            await status(res)
-            const data = await res.json()
-            responseHandler(data, dataForResHandler)
+            let res = await fetch(url,request)
+            res = await status(res,url)
+            if (res) {
+                const data = await res.json()
+                responseHandler(data, dataForResHandler)
+            }
         } catch (err) {
-            SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
+            if(url.includes(NASA_API_URL))
+                SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
             errorHandler(err)
         }
-        spinnerElements.forEach((spinnerElem)=>{
-            spinnerElem.classList.add("d-none")
-        })
+        finally {
+            spinnerElements.forEach((spinnerElem)=>{
+                spinnerElem.classList.add("d-none")
+            })
+        }
+
+        // fetch(url, request)
+        //     .then((res) => status(res, url))
+        //     .then(res => res.json())
+        //     .then(data => responseHandler(data, dataForResHandler))
+        //     .catch((err) => {
+        //         if (url.includes(NASA_API_URL))
+        //             SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
+        //         errorHandler(err)
+        //     })
+        //     .finally (()=>{
+        //         spinnerElements.forEach((spinnerElem)=>{
+        //             spinnerElem.classList.add("d-none")})
+        //     })
 
     }
 
@@ -199,7 +259,7 @@
             IMAGES = [];
             sendNasaRequests()
         } else {
-            errorHandler(new Error("Error, you picked invalid date"))
+            errorHandler(new Error(INVALID_DATE_ERROR))
         }
     }
 
@@ -242,96 +302,42 @@
     function validateNasaResponse(data) {
         if (!data || !(data instanceof Array) || !data.length ||
             !data.every((element) => validateModule.isValidURL(element.url) && validateModule.isValidDate(element.date)))
-            throw (new Error("Error occurred while getting Nasa response"))
+            throw (new Error(ERROR_WITH_NASA_SERVER))
     }
 
     function setComments(comments, startIndex) {
-        //validateComments(comments)
-        clearTimeout(TIMEOUT)
+        validateComments(comments)
+
         IMAGES.slice(startIndex).forEach((img) => {
             img.setComments(getImageComments(comments.comments, img.getDate()), comments.lastUpdate)
         })
         if(comments.lastUpdate && comments.lastUpdate > TIMESTAMP) {
             TIMESTAMP = comments.lastUpdate
         }
-        TIMEOUT = setTimeout(updateImages, 15000);
+        TIMEOUT = setTimeout(updateImagesComments, 15000);
     }
 
     function validateComments(comments) {
 
+        if (!comments.comments || !comments.lastUpdate || !validateModule.isValidTimeStamp(comments.lastUpdate) ||
+            !validateModule.isValidCommentsObject(comments.comments))
+            throw new Error(ERROR_WITH_API_SERVER)
     }
-
-    //
-    // /**
-    //  * The function fetch from NASA api the images links and displays it on the screen.
-    //  * @param end The date of the most old pictures wanted to be displayed.
-    //  * @param url The nasa url.
-    //  * @param newPage Parameter that tells the function if the page need to be regenerated.
-    //  */
-    // function fetchData(end, url, newPage=true){
-    //     SPINNER_BACKGROUND_ELEMENT.classList.remove("d-none")
-    //     const newDate = new Date(end);
-    //     newDate.setDate(newDate.getDate() - IMAGES_TO_FETCH + 1);
-    //     let start = newDate.toISOString().substring(0,10);
-    //     const newStartDate = new Date(start);
-    //     newStartDate.setDate(newStartDate.getDate() - 1);
-    //     currStartDate = newStartDate.toISOString().substring(0,10);
-    //     fetch(`${url}?api_key=${APIKEY}&start_date=${start}&end_date=${end}`)
-    //         .then(function(response) {
-    //             return response.json();
-    //         }).then(function (data) {
-    //         fetch(`/home/api?images=[${getPicsDates(data).toString()}]`)
-    //             .then(function (comments) {
-    //                 return comments.json();
-    //             }).then(function (comments){
-    //                 //console.log(comments);
-    //             let content = document.getElementById("content-list");
-    //             if(newPage) {
-    //                 IMAGES = [];
-    //             }
-    //             content.innerHTML = "";
-    //             data.forEach(function(item){
-    //                 console.log("here");
-    //                 IMAGES.push(new Image(item, getImageComments(comments, item.date)));
-    //             });
-    //             IMAGES.sort((a,b)=>{
-    //                 return b.getDate().toString().localeCompare(a.getDate().toString());
-    //             });
-    //             IMAGES.forEach(function (image){
-    //                 content.appendChild(image.getHtml());
-    //             })
-    //             //showAndHide("show-more-button", "show");
-    //             SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
-    //         })
-    //     }).catch(error =>{
-    //         //showAndHide("show-more-button", "hide");
-    //         SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
-    //         console.log("ERRORRRRRRR");
-    //     })
-    //         .finally(()=>{SPINNER_BACKGROUND_ELEMENT.classList.add("d-none")});
-    // }
 
     /**
      *
      */
     function getImageComments(comments, date) {
-        //let imageComments = [];
-        // Object.keys(comments).forEach(function (commentDate) {
-        //     if (commentDate === date) {
-        //         imageComments.push(comments[commentDate]);
-        //     }
-        // })
-        //imageComments.sort((a,b)=> a.updatedAt.toString().localeCompare(b.updatedAt.toString()))
-        return comments[date]??{}//imageComments;
+        return comments[date]??{}
     }
 
     /**
      * The function gets from the server the time stamp of its last database modification.
      */
-    function updateImages() {
+    function updateImagesComments() {
+        clearTimeout(TIMEOUT)
         let params = new URLSearchParams()
-        //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
-        console.log(TIMESTAMP)
+        //we should replace it with range of dates and not all of the dates, just like nasa that taking start and end.
         let dates = getPicsDates(IMAGES)
         dates.push(`"${TIMESTAMP}"`)
         params.append("images", `[${dates.toString()}]`)
@@ -344,15 +350,6 @@
         })
         return spinnersIdsArr
     }
-    //
-    // function handleUpdateResponse(version) {
-    //     //should validate returned version format and check for value
-    //     IMAGES.forEach((image) => {
-    //         if (parseInt(version["value"]) > image.getLastUpdate())
-    //             image.updateComments();
-    //     });
-    //     TIMEOUT = setTimeout(updateImages, 15000);
-    // }
 
 
     /**
@@ -378,13 +375,6 @@
         return content.trim().length > 0;
     }
 
-    // function handleCommentsUpdateResponse(comments, currentImage) {
-    //     currentImage.setComments(comments)
-    // }
-
-    // function responseToChangeComments(_, currentImage) {
-    //     currentImage.updateComments()
-    // }
     /**
      * This function is checking if there is need to split the explanation (explanation > MAX_WORDS_NUMBER_IN_DESCRIPTION)
      * It returns the result of the splitting if there was one.
@@ -408,7 +398,6 @@
         return {isSplit: isSplit, beforeMore:beforeMore, afterMore:afterMore}
     }
     class Image {
-        #lastUpdate
         #date
         #data
         #comments = new Map() //key=comment Id, value = element
@@ -417,28 +406,18 @@
         #commentsElement
 
         constructor(item) {
-            this.#lastUpdate = 0
             this.#date = item.date;
             this.#data = item;
             this.#displayComments = false;
         }
 
         setComments(comments, lastUpdate) {
-            //this will be change, we want to delete comments from dom and insert new one into it
-
-            //easy way - don't delete from dom directly, but delete all the comments that should be deleted and
-            //insert the new one.
-            // After that, use the code below to put again all comments in dom.
-            // Harder way - delete each element from dom, and add the new once
-            // (you could give them to #setHtmlComments).
-            //this.#comments = comments
             this.#deleteComments(comments.delete)
             if(comments.add && comments.add.length) {
                 let sortedComments = comments.add
-                sortedComments.sort((a, b) => {console.log(a.comment.id, b.comment.id); return a.comment.id - b.comment.id})
+                sortedComments.sort((a, b) => {return a.comment.id - b.comment.id})
                 this.#setHtmlComments(sortedComments)
             }
-            this.#lastUpdate = lastUpdate;
         }
 
         getImageHtml() {
@@ -478,11 +457,9 @@
                 imagePointer.#commentsElement.appendChild(li);
                 imagePointer.#comments.set(val.comment.id, li);
             })
-            console.log(this.#comments)
         }
 
         #getUserDataCol(val) {
-            console.log(val)
             let usersDataCol = document.createElement('div');
             usersDataCol.className = "col-12 col-lg-3 col-xl-2"
             let username = document.createElement('div');
@@ -658,7 +635,7 @@
                     document.getElementById(`${this.#date}-div`).classList.add("d-none")
                     document.getElementById(`${this.#date}-comment_button`).classList.remove("d-none")
 
-                    fetchRequest(`${COMMENTS_SERVER_URL}`, updateImages,[`${this.#date}-spinner`], undefined, message)
+                    fetchRequest(`${COMMENTS_SERVER_URL}`, updateImagesComments,[`${this.#date}-spinner`], undefined, message)
                 }
                 else{
                     errorHandler(new Error("Invalid comment content. Comment couldn't be empty or bigger than 128 characters"))
@@ -748,20 +725,11 @@
                 let params = new URLSearchParams();
                 params.append("id", id.toString())
                 let message = {method: "DELETE"}
-                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,updateImages, [`${this.#date}-spinner`], undefined, message)
+                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,updateImagesComments, [`${this.#date}-spinner`], undefined, message)
             });
             buttonDiv.appendChild(button)
             return buttonDiv;
         }
 
-        // updateComments() {
-        //     let params = new URLSearchParams()
-        //     params.append("images", `["${this.#date}"]`)
-        //     fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`, handleCommentsUpdateResponse,`${this.#date}-spinner`, this)
-        // }
-
-        getLastUpdate() {
-            return this.#lastUpdate;
-        }
     }
 })();

@@ -24,15 +24,22 @@ const constantsErrorMessageModule= (function(){
     const MISSING_PARAMETERS = "required parameters are missing, The required parameters are image (url), username (string) " +
         "and comment (string)"
     const COULDNT_FIND_UPDATE_DATE = "Couldn't find last update"
+    const NOT_LOGIN_ERROR = "You couldn't get to this page if you are not login."
+    const CANT_GET_LOGIN_PAGE_ERROR = "You are login. You can't get registration/ login pages"
     const COMMENT_NOT_FOUND = "Comment not found, maybe deleted before"
     const CANT_DELETE_COMMENT = "You can't delete this comment"
+    const LOGIN_TO_ANOTHER_USER = "You are logged in from another user"
+    const INVALID_TOKEN = "You got invalid token. Please try to login again or refresh the page"
+    const WRONG_ADDRESS = " or you tried to get wrong address."
 
     return {
         EMAIL_EXIST_ERR, EMPTY_ERR, MIN_AND_MAX_LENGTH_ERR, MAX_LENGTH_ERR, NO_ALPHA_ERR,EMAIL_ERR,
         INVALID_PASSWORD_ERR, LOGIN_ERR, SOMETHING_WENT_WRONG,INVALID_STRING_ERROR, FIND_COMMENTS,
         CREATE_COMMENT, DELETE_COMMENT,UPDATE_COMMENT, MISSING_IMAGES, DATES_INVALID_FORMAT,
         CANT_PARSE_DATA, REQUEST_NO_QUERY, MISSING_PARAMETERS, COULDNT_FIND_UPDATE_DATE, USERNAME_ERROR, TOO_LONG,
-        COMMENT_NOT_FOUND, CANT_DELETE_COMMENT
+        NOT_LOGIN_ERROR, CANT_GET_LOGIN_PAGE_ERROR, COMMENT_NOT_FOUND, CANT_DELETE_COMMENT,LOGIN_TO_ANOTHER_USER,
+        INVALID_TOKEN,WRONG_ADDRESS
+
     }
 })();
 

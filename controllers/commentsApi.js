@@ -54,7 +54,7 @@ exports.commentsDelete = (req,res) => {
             .then((comment) => {
                 if (!comment || comment.deletionTime)
                     throw new Error(constants.COMMENT_NOT_FOUND)
-                if (comment.userid !== userid) {
+                else if (comment.userid === userid.toString()) {
                     commentsController.updateCommentDeletion(comment);
                 }
                 else{
@@ -77,6 +77,8 @@ exports.commentsUpdate = (req,res) => {
     if(commentsController.validateGetRequest(req,res) && commentsController.validateAllDates(req,res)) {
         let dataArray = JSON.parse(req.query.images);
         let timeStamp= dataArray.pop()
+        let date = new Date(timeStamp)
+        let stringTimeStamp = date.toISOString()
         db.Comments.findAll({
             where: {
                 picDate: {
@@ -84,11 +86,11 @@ exports.commentsUpdate = (req,res) => {
                 },
                 [Sequelize.Op.or]: [
                     { createdAt:{
-                            [Sequelize.Op.gt]: timeStamp
+                            [Sequelize.Op.gt]: stringTimeStamp
                         }},
                     { deletionTime:{
                             [Sequelize.Op.not] : null,
-                            [Sequelize.Op.gt]: timeStamp
+                            [Sequelize.Op.gt]: stringTimeStamp
                         }}
                 ]
             }

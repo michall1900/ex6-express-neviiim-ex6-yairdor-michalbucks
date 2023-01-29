@@ -1,7 +1,8 @@
 <%- include('includes/head.ejs')%>
+<div id="token" class="d-none"><%if(token){%><%=token%><%}%></div>
 <div class="container">
     <div class="row align-items-center">
-        <img class="col-1 img-fluid fw-bold" src="./images/NASA-Logo-Large.png" alt="">
+        <img class="col-3 col-md-2 col-xl-1 img-fluid fw-bold" src="./images/NASA-Logo-Large.png" alt="">
         <div class="col">Created by <cite>Yair Dor and Michal Bucks</cite></div>
     </div>
     <div class="row">
@@ -39,7 +40,7 @@
                 <h5 class="modal-title" id="contentErrorModal">Error</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" id="closeModal1"></button>
             </div>
-            <div class="modal-body text-danger h4" id="errorMessage">
+            <div class="modal-body text-danger h4" id="errorMessage"><%if(error){%><%-error%><%}%>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="closeModal2">Close</button>

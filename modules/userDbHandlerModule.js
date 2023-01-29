@@ -2,6 +2,7 @@ const db = require("../models");
 const constants = require("./constantsErrorMessageModule");
 const Sequelize = require("sequelize");
 const cookiesHandler = require("./cookiesHandler");
+const bcrypt = require('bcrypt');
 
 const userDbHandlerModule = (function(){
 
@@ -13,10 +14,39 @@ const userDbHandlerModule = (function(){
     }
 
     const isUserRegisterCheck = async (userObj)=>{
-        const user = await db.User.findOne({where:{[Sequelize.Op.and]:[{email:userObj.email}, {password:userObj.password}]}})
+        // const user = await db.User.findOne({where:{[Sequelize.Op.and]:[{email:userObj.email}, {password:userObj.password}]}})
+        // if (!user)
+        //     throw new Error (constants.LOGIN_ERR)
+        // return user
+        const user = await db.User.findOne({ where: { email:userObj.email } })
         if (!user)
             throw new Error (constants.LOGIN_ERR)
-        return user
+        else{
+            const result = await bcrypt.compare(userObj.password, user.password)
+            if (!result)
+                throw new Error (constants.LOGIN_ERR)
+            return user
+        }
+
+
+        // return User.findOne({ where: { email:userObj.email } }).then(user => {
+        //     if (!user) {
+        //         res.status(401).json({ message: 'Invalid email or password' });
+        //     } else {
+        //         bcrypt.compare(userObj.password, user.password).then(result => {
+        //             if (result) {
+        //
+        //                 res.json({ message: 'Authentication successful' });
+        //             } else {
+        //                 res.status(401).json({ message: 'Invalid email or password' });
+        //             }
+        //         }).catch(err => {
+        //             res.status(500).json({ message: 'Error during authentication' });
+        //         });
+        //     }
+        // }).catch(err => {
+        //     res.status(500).json({ message: 'Error during authentication' });
+        // })
     }
 
     const validateUser = async (user, validationsFields) =>{

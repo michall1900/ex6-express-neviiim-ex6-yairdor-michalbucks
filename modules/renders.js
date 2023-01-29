@@ -33,14 +33,17 @@ const renderResponseModule = (function(){
     const getHome = (req, res)=>{
         res.render('home',{
             tabTitle: "Home",
-            error: req.data.error,
+            username: req.session.username,
+            token: req.session.userid.toString(),
+            error: req.data.error
         })
     }
 
     return {
         "renderRegisterPage": renderRegisterPage,
         "renderPasswordPage":renderPasswordPage,
-        "renderLoginPage":renderLoginPage
+        "renderLoginPage":renderLoginPage,
+        "getHome": getHome
     }
 })();
 

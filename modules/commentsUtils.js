@@ -13,14 +13,16 @@ const commentsUtils = (function() {
      */
     const parseComments = (comments, isNeedToReceiveDelete,userId) =>{
         let ans = {};
+        const keysToKeep = ["username","content","id","updatedAt"]
         for (let comment of comments){
-            let currentUserId = comment.userid
-            delete comment.userid
+            let newComment = Object.fromEntries(Object.entries(comment.dataValues)
+                .filter(([key, _]) => keysToKeep.includes(key))
+            );
             if (ans[comment.picDate] === undefined){
                 ans[comment.picDate] = {"add": [], "delete": []}
             }
             if (!comment.deletionTime){
-                ans[comment.picDate]["add"].push({"comment":comment,"couldDelete": currentUserId===userId.toString()});
+                ans[comment.picDate]["add"].push({"comment":newComment,"couldDelete": comment.userid===userId.toString()});
             }
             else if(isNeedToReceiveDelete){
                 ans[comment.picDate]["delete"].push(comment.id);
@@ -47,7 +49,7 @@ const commentsUtils = (function() {
      */
     const validateGetRequest = (req, res) => {
         if(req.query === undefined || req.query.images === undefined || !req.query.images.length) {
-            ErrorMsg(res,constants.MISSING_IMAGES);
+            errorMsg(res,constants.MISSING_IMAGES);
             return false;
         }
         return true;
@@ -62,16 +64,18 @@ const commentsUtils = (function() {
     const validateAllDates = (req,res) => {
         try{
             let dataArray = JSON.parse(req.query.images);
+            if (!dataArray || !dataArray.length)
+                throw constants.DATES_INVALID_FORMAT
             for(let val of dataArray){
                 let tempDate = new Date(val).toISOString().substring(0,10);
                 if ( !validations.isValidDate(tempDate)|| new Date(tempDate).valueOf() > new Date().valueOf()){
-                    ErrorMsg(res,constants.DATES_INVALID_FORMAT);
+                    errorMsg(res,constants.DATES_INVALID_FORMAT);
                     return false;
                 }
             }
         }
         catch {
-            ErrorMsg(res,constants.CANT_PARSE_DATA);
+            errorMsg(res,constants.CANT_PARSE_DATA);
             return false;
         }
         return true;
@@ -84,12 +88,12 @@ const commentsUtils = (function() {
      */
     const validateDeleteRequestInput = (req, res) =>{
         if(req.query === undefined) {
-            ErrorMsg(res,constants.REQUEST_NO_QUERY);
+            errorMsg(res,constants.REQUEST_NO_QUERY);
             return false;
         }
         else {
             if (req.query.id === undefined) {
-                ErrorMsg(res,constants.MISSING_PARAMETERS);
+                errorMsg(res,constants.MISSING_PARAMETERS);
                 return false;
             }
         }
@@ -104,7 +108,7 @@ const commentsUtils = (function() {
      */
     const validateNewCommentInput = (req, res) => {
         if(req.body === undefined || req.body.picDate === undefined || req.body.content === undefined){
-            ErrorMsg(res,constants.MISSING_PARAMETERS);
+            errorMsg(res,constants.MISSING_PARAMETERS);
             return false;
         }
         return true;
@@ -117,7 +121,7 @@ const commentsUtils = (function() {
      */
     const errorMsg = (res, err) => {
         res.status(400);
-        res.send(err);
+        res.json(err);
     }
 
     /**

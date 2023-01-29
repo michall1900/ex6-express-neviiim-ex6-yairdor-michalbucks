@@ -8,7 +8,7 @@ const cookiesHandler = require('../modules/cookiesHandler.js')
  */
 exports.get404 = (req, res) => {
   res.status(404).render('error', {
-    tabTitle: 'Page Not Found',pageTitle:'Error',subTitle:"Some error occured!",error:"Page Not Found!" });
+    tabTitle: 'Page Not Found',pageTitle:'Error',subTitle:"Some error occurred!",error:"Page Not Found!" });
 };
 /**
  * Set the error message inside req.data.
@@ -21,5 +21,4 @@ exports.getErrorCookie = (req, res, next) => {
   req.data.error = cookies.get(cookiesHandler.ERROR_COOKIE_NAME)
   cookies.set(cookiesHandler.ERROR_COOKIE_NAME,'',{maxAge:0})
   next()
-
 }

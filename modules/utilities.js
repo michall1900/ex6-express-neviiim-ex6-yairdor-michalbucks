@@ -1,13 +1,9 @@
+const validation = require("./validationModule.js")
+const session = require("express-session");
+const cookiesHandler = require("./cookiesHandler");
+const constants = require("./constantsErrorMessageModule");
 
 const utilitiesModule = (function(){
-    /**
-     * Return if object is a string or not.
-     * @param object
-     * @returns {boolean}
-     */
-    const isString= (object)=>{
-        return (!!object instanceof String || typeof (object) === "string")
-    }
 
     /**
      * The function is doing trim() and to lower case to the received string.
@@ -15,16 +11,30 @@ const utilitiesModule = (function(){
      * @returns {string|*}
      */
     const trimAndLower = (string)=>{
-        return (isString(string))? string.trim().toLowerCase(): string
+        return (validation.isString(string))? string.trim().toLowerCase(): string
     }
 
     const stringToTitle = (string) =>{
-        let convertedStr = (isString(string))? string.split(" ").map((str)=>str.charAt(0).toUpperCase() +str.slice(1)).reverse().join(" ") : string
-        console.log(convertedStr)
-        return convertedStr
+        return (validation.isString(string))? string.split(" ").map((str)=>str.charAt(0).toUpperCase() +str.slice(1)).reverse().join(" ") : string
     }
 
-    return {trimAndLower,isString, stringToTitle}
+    const buildSession = ()=>{
+        console.log("here")
+        return session({
+            secret:"somesecretkey",
+            resave: false, // Force save of session for each request
+            saveUninitialized: false, // Save a session that is new, but has not been modified
+            cookie: {maxAge: Number.MAX_SAFE_INTEGER }
+        })
+    }
+
+    const userCouldntGetPage =(req,res, errorMsg, redirectAdd,isFetch)=>{
+        if (errorMsg)
+            cookiesHandler.createErrorCookie(req,res, `${errorMsg} ${constants.WRONG_ADDRESS}`)
+        isFetch? res.status(302).json({redirect:redirectAdd}):res.redirect(redirectAdd)
+    }
+
+    return {trimAndLower, stringToTitle, buildSession, userCouldntGetPage}
 })();
 
 module.exports = utilitiesModule

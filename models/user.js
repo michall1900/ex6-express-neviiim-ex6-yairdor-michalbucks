@@ -1,9 +1,11 @@
 'use strict';
 const constants = require("../modules/constantsErrorMessageModule.js");
-const isString  = require("../modules/utilities.js").isString
+const isString  = require("../modules/validationModule.js").isString
+const bcrypt = require("bcrypt");
 const {
   Model
 } = require('sequelize');
+const saltRounds = 10;
 const throwIsStringError = (obj)=>{
   if(!isString(obj))
     throw new Error(`Error, the input ${obj} ${constants.INVALID_STRING_ERROR}`)
@@ -95,6 +97,17 @@ module.exports = (sequelize, DataTypes) => {
   }, {
     sequelize,
     modelName: 'User',
+    hooks:{
+      beforeCreate :(user => {
+        return bcrypt.hash(user.password, saltRounds)
+            .then(hash => {
+              user.password = hash;
+            })
+            .catch(err => {
+              throw new Error();
+            });
+      })
+    }
   });
   return User;
 };
