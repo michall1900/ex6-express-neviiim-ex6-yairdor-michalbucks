@@ -73,21 +73,46 @@
             return !!object && (new Date(object) !== "Invalid Date") && new Date (object) <= new Date()
         }
 
+        /**
+         * checks that the date exists.
+         * @param date
+         * @returns {boolean}
+         */
         const isValidExistDate = (date)=>{
             return isValidDate(date) && !!IMAGES.find(img => img.getDate() === date)
         }
+        /**
+         * checks that all keys are valid dates
+         * @param keys
+         * @returns {*}
+         */
         const isAllKeysAreValidDates = (keys)=>{
             return keys.every((val)=> isValidExistDate(val))
         }
+        /**
+         * Checks that the value can be added
+         * @param addValues
+         * @returns {*}
+         */
         const isValidAddValue = (addValues)=>{
             return addValues.every((elem)=>{return (typeof elem.couldDelete === "boolean" && elem.comment && elem.comment.username
                 && elem.comment.id && elem.comment.content && isValidTimeStamp(elem.comment.updatedAt))})
 
         }
+        /**
+         * Checks that the comment structure is valid
+         * @param CommentsValues
+         * @returns {false|*|boolean}
+         */
         const isValidCommentStructure = (CommentsValues) =>{
             return  CommentsValues.add && CommentsValues.add instanceof Array && isValidAddValue(CommentsValues.add) &&
                 CommentsValues.delete && CommentsValues.delete instanceof Array
         }
+        /**
+         * Checks that the comment object is valid
+         * @param commentsObj
+         * @returns {*|this is unknown[]}
+         */
         const isValidCommentsObject = (commentsObj)=> {
             return (isAllKeysAreValidDates(Object.keys(commentsObj)) &&
                 Object.values(commentsObj).every((val) =>
@@ -201,6 +226,15 @@
         }
     }
 
+    /**
+     *
+     * @param url
+     * @param responseHandler
+     * @param spinnerIdArr
+     * @param dataForResHandler
+     * @param request
+     * @returns {Promise<void>}
+     */
     async function fetchRequest(url, responseHandler,spinnerIdArr=[], dataForResHandler = undefined, request = {}) {
         //there needs to be many spinners, for loading comments for adding comments.. it can't be just in full page
         let spinnerElements = []
