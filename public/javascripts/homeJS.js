@@ -622,15 +622,17 @@
         #setHtmlComments(newComments) {
             const imagePointer = this;
             newComments.forEach(function (val) {
-                let li = document.createElement('li');
-                li.className = "list-group-item mt-2 bg-light border-5 border-white";
-                let div = document.createElement("div")
-                div.className = "row align-items-center"
-                div.appendChild(imagePointer.#getUserDataCol(val.comment))
-                div.appendChild(imagePointer.#getContentAndDeleteCol(val))
-                li.appendChild(div)
-                imagePointer.#commentsElement.appendChild(li);
-                imagePointer.#comments.set(val.comment.id, li);
+                if (!imagePointer.#comments.has(val.comment.id)){
+                    let li = document.createElement('li');
+                    li.className = "list-group-item mt-2 bg-light border-5 border-white";
+                    let div = document.createElement("div")
+                    div.className = "row align-items-center"
+                    div.appendChild(imagePointer.#getUserDataCol(val.comment))
+                    div.appendChild(imagePointer.#getContentAndDeleteCol(val))
+                    li.appendChild(div)
+                    imagePointer.#commentsElement.appendChild(li);
+                    imagePointer.#comments.set(val.comment.id, li);
+                }
             })
         }
 
