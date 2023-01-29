@@ -1,28 +1,41 @@
 (function () {
-    let TIMEOUT = setTimeout(updateImagesComments, 15000);
-    let IMAGES = [];
-    const TOKEN_ID = "token"
-    let TOKEN
-    const APIKEY = "aKRnQfhPmxqeskcpdkcfomXKcIGbW1p8FFvuQhsa";
-    const IMAGES_TO_FETCH = 5;
-    let currStartDate = "";
-    const NASA_API_URL = "https://api.nasa.gov/planetary/apod/"
-    const COMMENTS_SERVER_URL = "/home/api"
-    const SPINNER_BACKGROUND_CLASS_NAME = "spinner-background"
-    let SPINNER_BACKGROUND_ELEMENT;
-    let SHOW_MORE_BUTTON_ELEMENT;
-    const ERROR_WITH_API_SERVER = "There is an error with api server"
-    const ERROR_WITH_NASA_SERVER = "There is an error with NASA server"
-    const MIN_OK_STATUS = 200;
-    const MAX_OK_STATUS = 300;
-    let MODAL_ERROR_MESSAGE_ELEMENT;
-    let MODAL_ERROR_BUTTON_ELEMENT;
-    let USER_DATE_ELEMENT;
-    let CONTENT_ELEMENT;
-    const MAX_WORDS_NUMBER_IN_DESCRIPTION = 30
-    let TIMESTAMP = "0"
-    const INVALID_DATE_ERROR ="Error, you picked invalid date"
-    const INVALID_CONTENT_ERROR= "Invalid comment content. Comment couldn't be empty or bigger than 128 characters"
+    /**
+     * This module includes all the globals in program
+     * @type {{ERROR_WITH_NASA_SERVER: string, SHOW_MORE_BUTTON_ELEMENT, INVALID_CONTENT_ERROR: string, MODAL_ERROR_MESSAGE_ELEMENT, INVALID_DATE_ERROR: string, SPINNER_BACKGROUND_CLASS_NAME: string, MIN_OK_STATUS: number, SPINNER_BACKGROUND_ELEMENT, APIKEY: string, IMAGES_TO_FETCH: number, ERROR_WITH_API_SERVER: string, MAX_OK_STATUS: number, IMAGES: *[], currStartDate, COMMENTS_SERVER_URL: string, USER_DATE_ELEMENT, NASA_API_URL: string, TIMESTAMP: string, MODAL_ERROR_BUTTON_ELEMENT, TOKEN_ID: string, TIMEOUT, TOKEN, CONTENT_ELEMENT, MAX_WORDS_NUMBER_IN_DESCRIPTION: number}}
+     */
+    const ProgramGlobalsModule = (function(){
+        const APIKEY = "aKRnQfhPmxqeskcpdkcfomXKcIGbW1p8FFvuQhsa";
+        let TIMEOUT
+        let IMAGES = [];
+        const TOKEN_ID = "token";
+        let TOKEN;
+        const IMAGES_TO_FETCH = 5;
+        let currStartDate;
+        const NASA_API_URL = "https://api.nasa.gov/planetary/apod/"
+        const COMMENTS_SERVER_URL = "/home/api"
+        const SPINNER_BACKGROUND_CLASS_NAME = "spinner-background"
+        let SPINNER_BACKGROUND_ELEMENT;
+        let SHOW_MORE_BUTTON_ELEMENT;
+        const ERROR_WITH_API_SERVER = "There is an error with api server"
+        const ERROR_WITH_NASA_SERVER = "There is an error with NASA server"
+        const MIN_OK_STATUS = 200;
+        const MAX_OK_STATUS = 300;
+        let MODAL_ERROR_MESSAGE_ELEMENT;
+        let MODAL_ERROR_BUTTON_ELEMENT;
+        let USER_DATE_ELEMENT;
+        let CONTENT_ELEMENT;
+        const MAX_WORDS_NUMBER_IN_DESCRIPTION = 30
+        let TIMESTAMP = "0"
+        const INVALID_DATE_ERROR ="Error, you picked invalid date"
+        const INVALID_CONTENT_ERROR= "Invalid comment content. Comment couldn't be empty or bigger than 128 characters"
+
+        return {IMAGES, TOKEN_ID, TOKEN, IMAGES_TO_FETCH, currStartDate, NASA_API_URL, COMMENTS_SERVER_URL,
+            SPINNER_BACKGROUND_CLASS_NAME, SPINNER_BACKGROUND_ELEMENT,SHOW_MORE_BUTTON_ELEMENT, ERROR_WITH_API_SERVER,
+            ERROR_WITH_NASA_SERVER, MIN_OK_STATUS, MAX_OK_STATUS, MODAL_ERROR_MESSAGE_ELEMENT, MODAL_ERROR_BUTTON_ELEMENT,
+            USER_DATE_ELEMENT, CONTENT_ELEMENT, MAX_WORDS_NUMBER_IN_DESCRIPTION, TIMESTAMP, INVALID_DATE_ERROR,
+            INVALID_CONTENT_ERROR, TIMEOUT, APIKEY}
+    })();
+
 
     /**
      * This module is validates fields.
@@ -44,7 +57,7 @@
         }
 
         /**
-         * Receives an object (should be a string) and return if it is a date.
+         * Receives an object (should be a string) and return if it is a valid date (<= today).
          * @param object - any object
          * @returns {boolean} - true if it is valid date, otherwise false.
          */
@@ -66,7 +79,7 @@
 
 
         /**
-         * This function is validate time stamp (integer number)
+         * This function is validate time stamp (date's ISOString )
          * @param object
          * @returns {boolean}
          */
@@ -75,15 +88,15 @@
         }
 
         /**
-         * checks that the date exists.
+         * checks that the date is valid and exists in IMAGE array.
          * @param date
          * @returns {boolean}
          */
         const isValidExistDate = (date)=>{
-            return isValidDate(date) && !!IMAGES.find(img => img.getDate() === date)
+            return isValidDate(date) && !!ProgramGlobalsModule.IMAGES.find(img => img.getDate() === date)
         }
         /**
-         * checks that all keys are valid dates
+         * checks that all keys are valid dates and are in IMAGE array
          * @param keys
          * @returns {*}
          */
@@ -91,9 +104,9 @@
             return keys.every((val)=> isValidExistDate(val))
         }
         /**
-         * Checks that the value can be added
-         * @param addValues
-         * @returns {*}
+         * Checks that the add section of the received comments is valid
+         * @param addValues - The add section that returned from server's comments.
+         * @returns {*} - True if valid, false otherwise
          */
         const isValidAddValue = (addValues)=>{
             return addValues.every((elem)=>{return (typeof elem.couldDelete === "boolean" && elem.comment && elem.comment.username
@@ -131,63 +144,71 @@
     //----------------------------------- listeners initial's definition ----------------------------------------------
 
     document.addEventListener("DOMContentLoaded", () => {
-        SPINNER_BACKGROUND_ELEMENT = document.getElementsByClassName(SPINNER_BACKGROUND_CLASS_NAME)[0]
-        SHOW_MORE_BUTTON_ELEMENT = document.getElementById("show-more-button");
-        MODAL_ERROR_MESSAGE_ELEMENT = document.getElementById("errorMessage");
-        MODAL_ERROR_BUTTON_ELEMENT = document.getElementById("errorModalBtn");
-        USER_DATE_ELEMENT = document.getElementById("pictureDate");
-        CONTENT_ELEMENT = document.getElementById("content-list");
-        let tokenElement = document.getElementById(TOKEN_ID)
-        TOKEN = (tokenElement && tokenElement.innerText.match(/[a-zA-Z0-9]+/))?  tokenElement.innerText:""
-        tokenElement.remove()
+        initGlobals()
+
         document.querySelectorAll(`#closeModal1, #closeModal2`).forEach((elem)=>{
-            elem.addEventListener("click",(event)=>{
-                MODAL_ERROR_MESSAGE_ELEMENT.innerText = ""
+            elem.addEventListener("click",(_)=>{
+                ProgramGlobalsModule.MODAL_ERROR_MESSAGE_ELEMENT.innerText = ""
             })
         })
         const nasaFormElement = document.getElementById("dateForm");
         nasaFormElement.addEventListener("submit", function (event) {
             onChangeDate(event)
         })
-        SHOW_MORE_BUTTON_ELEMENT.addEventListener("click", function () {
+        ProgramGlobalsModule.SHOW_MORE_BUTTON_ELEMENT.addEventListener("click", function () {
             sendNasaRequests()
         })
         //Display current date.
-        let todaysDate = new Date();
-        USER_DATE_ELEMENT.value = todaysDate.toISOString().substring(0, 10);
+        let todayDate = new Date();
+        ProgramGlobalsModule.USER_DATE_ELEMENT.value = todayDate.toISOString().substring(0, 10);
 
         //Ask for the first time the feed page without user involved.
         const event = new Event("submit", {bubbles: true, cancelable: true});
         nasaFormElement.dispatchEvent(event);
-        if (MODAL_ERROR_MESSAGE_ELEMENT.innerText.match("[a-z]+"))
-            MODAL_ERROR_BUTTON_ELEMENT.click()
+        if (ProgramGlobalsModule.MODAL_ERROR_MESSAGE_ELEMENT.innerText.match("[a-z]+"))
+            ProgramGlobalsModule.MODAL_ERROR_BUTTON_ELEMENT.click()
     });
 
+    /**
+     * This function is initialize all globals variables (elements, token, timeout, etc)
+     */
+    function initGlobals(){
+        ProgramGlobalsModule.TIMEOUT = setTimeout(updateImagesComments, 15000);
+        ProgramGlobalsModule.SPINNER_BACKGROUND_ELEMENT = document.getElementsByClassName(ProgramGlobalsModule.SPINNER_BACKGROUND_CLASS_NAME)[0]
+        ProgramGlobalsModule.SHOW_MORE_BUTTON_ELEMENT = document.getElementById("show-more-button");
+        ProgramGlobalsModule.MODAL_ERROR_MESSAGE_ELEMENT = document.getElementById("errorMessage");
+        ProgramGlobalsModule.MODAL_ERROR_BUTTON_ELEMENT = document.getElementById("errorModalBtn");
+        ProgramGlobalsModule.USER_DATE_ELEMENT = document.getElementById("pictureDate");
+        ProgramGlobalsModule.CONTENT_ELEMENT = document.getElementById("content-list");
+        let tokenElement = document.getElementById(ProgramGlobalsModule.TOKEN_ID)
+        ProgramGlobalsModule.TOKEN = (tokenElement && tokenElement.innerText.match(/[a-zA-Z0-9]+/))?  tokenElement.innerText:""
+        tokenElement.remove()
+    }
 
     /**
      * The function is showing the error message to the user inside a modal.
      * @param error - Error object.
      */
     function displayError(error) {
-        MODAL_ERROR_MESSAGE_ELEMENT.innerHTML = `${error.message ?? error}`
-        MODAL_ERROR_BUTTON_ELEMENT.click()
+        ProgramGlobalsModule.MODAL_ERROR_MESSAGE_ELEMENT.innerHTML = `${error.message ?? error}`
+        ProgramGlobalsModule.MODAL_ERROR_BUTTON_ELEMENT.click()
 
 
     }
 
     /**
-     * The function is checking if there was status code < 200 or >=300 in the respone.
-     * It checks if
+     * The function is checking if there was status code < 200 or >=300 in the response.
+     * It checks if the status is ok or there is need to redirect, render page or if there is an error.
      * The assumption is the response is server's response.
      * @param response
-     * @param url
+     * @param url - the fetched url
      * @returns {Promise<any>}
      */
     function status(response,url) {
-        const isNasaRequest = url.includes(NASA_API_URL)
+        const isNasaRequest = url.includes(ProgramGlobalsModule.NASA_API_URL)
 
         //If everything ok
-        if (response.status >= MIN_OK_STATUS && response.status < MAX_OK_STATUS) {
+        if (response.status >= ProgramGlobalsModule.MIN_OK_STATUS && response.status < ProgramGlobalsModule.MAX_OK_STATUS) {
             return Promise.resolve(response)
         }
 
@@ -208,7 +229,7 @@
     }
 
     /**
-     * When the server asks to render the page while we are in a fetch
+     * When the server asks to render the page while we are in a fetch, render the page. Happens in 404 error.
      * @param response
      * @returns {any}
      */
@@ -230,7 +251,7 @@
     }
 
     /**
-     * redirects the user
+     * redirects the user to another page if server ask to do it.
      * @param response
      * @returns {Promise<never>}
      */
@@ -263,7 +284,8 @@
             })
             .then((jsonData)=>
                 Promise.reject(new Error(`status ${jsonData.code??jsonData.status}:
-                     ${jsonData.msg?? jsonData.message??((isNasaRequest)? ERROR_WITH_NASA_SERVER: ERROR_WITH_API_SERVER)}`) ))
+                     ${jsonData.msg?? jsonData.message??((isNasaRequest)? ProgramGlobalsModule.ERROR_WITH_NASA_SERVER:
+                    ProgramGlobalsModule.ERROR_WITH_API_SERVER)}`) ))
             .catch ((err) => {return Promise.reject(new Error(err.message))} )
     }
 
@@ -292,10 +314,10 @@
             .catch((err) => {
                 //if there is a problem with nasa response, we don't want to show the load more button.
                 //also, we don't want to timeout work when there is no images.
-                if (url.includes(NASA_API_URL)) {
-                    SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
-                    if (!IMAGES.length)
-                        clearTimeout(TIMEOUT)
+                if (url.includes(ProgramGlobalsModule.NASA_API_URL)) {
+                    ProgramGlobalsModule.SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
+                    if (!ProgramGlobalsModule.IMAGES.length)
+                        clearTimeout(ProgramGlobalsModule.TIMEOUT)
                 }
                 displayError(err)
             })
@@ -305,7 +327,7 @@
     }
 
     /**
-     * push and return the spinner elements
+     * push and return the valid spinners elements
      * @param spinnerElementsArr
      * @returns {*[]}
      */
@@ -330,7 +352,7 @@
             request.headers = {}
         }
         request.headers['X-Is-Fetch'] = 'true'
-        request.headers['token'] = `${TOKEN}`
+        request.headers['token'] = `${ProgramGlobalsModule.TOKEN}`
         return request
     }
 
@@ -344,19 +366,19 @@
     }
 
     /**
-     *
+     * The function is handle with a new date request.
      * @param event
      */
     function onChangeDate(event) {
         event.preventDefault();
         //think about moving it somewhere else
-        if (validateModule.isValidDate(USER_DATE_ELEMENT.value)) {
-            currStartDate = USER_DATE_ELEMENT.value;
-            CONTENT_ELEMENT.innerHTML = "";
-            IMAGES = [];
+        if (validateModule.isValidDate(ProgramGlobalsModule.USER_DATE_ELEMENT.value)) {
+            ProgramGlobalsModule.currStartDate = ProgramGlobalsModule.USER_DATE_ELEMENT.value;
+            ProgramGlobalsModule.CONTENT_ELEMENT.innerHTML = "";
+            ProgramGlobalsModule.IMAGES = [];
             sendNasaRequests()
         } else {
-            displayError(new Error(INVALID_DATE_ERROR))
+            displayError(new Error(ProgramGlobalsModule.INVALID_DATE_ERROR))
         }
     }
 
@@ -364,21 +386,22 @@
      * Sends the request to nasa api to fetch images
      */
     function sendNasaRequests() {
-        const newDate = new Date(currStartDate);
-        newDate.setDate(newDate.getDate() - IMAGES_TO_FETCH + 1);
+        const newDate = new Date(ProgramGlobalsModule.currStartDate);
+        newDate.setDate(newDate.getDate() - ProgramGlobalsModule.IMAGES_TO_FETCH + 1);
         const start = newDate.toISOString().substring(0, 10);
         const newStartDate = new Date(start);
         newStartDate.setDate(newStartDate.getDate() - 1);
         let params = new URLSearchParams()
-        params.append("api_key", `${APIKEY}`)
+        params.append("api_key", `${ProgramGlobalsModule.APIKEY}`)
         params.append("start_date", `${start}`)
-        params.append("end_date", `${currStartDate}`)
-        fetchRequest(`${NASA_API_URL}?${params.toString()}` ,handleNasaResponse, [SPINNER_BACKGROUND_ELEMENT])
-        currStartDate = newStartDate.toISOString().substring(0, 10);
+        params.append("end_date", `${ProgramGlobalsModule.currStartDate}`)
+        fetchRequest(`${ProgramGlobalsModule.NASA_API_URL}?${params.toString()}` ,handleNasaResponse,
+            [ProgramGlobalsModule.SPINNER_BACKGROUND_ELEMENT])
+        ProgramGlobalsModule.currStartDate = newStartDate.toISOString().substring(0, 10);
     }
 
     /**
-     * Handles the nasa response from the fetch request -> create the HTML based on the response
+     * Handles the nasa response from the fetch request -> create the new images HTML based on the response
      * @param data
      */
     function handleNasaResponse(data) {
@@ -391,26 +414,29 @@
             return b.getDate().toString().localeCompare(a.getDate().toString());
         });
         newImages.forEach(function (image) {
-            CONTENT_ELEMENT.appendChild(image.getImageHtml());
+            ProgramGlobalsModule.CONTENT_ELEMENT.appendChild(image.getImageHtml());
         })
-        let startIndex = IMAGES.length
-        IMAGES.push(...newImages)
+        let startIndex = ProgramGlobalsModule.IMAGES.length
+        ProgramGlobalsModule.IMAGES.push(...newImages)
         let params = new URLSearchParams()
+
         //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
 
         params.append("images", `[${getPicsDates(newImages).toString()}]`)
-        fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,setComments,[SPINNER_BACKGROUND_ELEMENT], startIndex)
-        SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
+        fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}?${params.toString()}`,setComments,
+            [ProgramGlobalsModule.SPINNER_BACKGROUND_ELEMENT], startIndex)
+        ProgramGlobalsModule.SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
     }
 
     /**
      * valides nasas response
+     * @throws in error with nasa response an error message.
      * @param data
      */
     function validateNasaResponse(data) {
         if (!data || !(data instanceof Array) || !data.length ||
             !data.every((element) => validateModule.isValidURL(element.url) && validateModule.isValidDate(element.date)))
-            throw (new Error(ERROR_WITH_NASA_SERVER))
+            throw (new Error(ProgramGlobalsModule.ERROR_WITH_NASA_SERVER))
     }
 
     /**
@@ -421,24 +447,25 @@
     function setComments(comments, startIndex) {
         validateComments(comments)
 
-        IMAGES.slice(startIndex).forEach((img) => {
+        ProgramGlobalsModule.IMAGES.slice(startIndex).forEach((img) => {
             img.setComments(getImageComments(comments.comments, img.getDate()), comments.lastUpdate)
         })
-        if(comments.lastUpdate && comments.lastUpdate > TIMESTAMP) {
-            TIMESTAMP = comments.lastUpdate
+        if(comments.lastUpdate && comments.lastUpdate > ProgramGlobalsModule.TIMESTAMP) {
+            ProgramGlobalsModule.TIMESTAMP = comments.lastUpdate
         }
-        TIMEOUT = setTimeout(updateImagesComments, 15000);
+        ProgramGlobalsModule.TIMEOUT = setTimeout(updateImagesComments, 15000);
     }
 
     /**
      * validates the comments.
+     * @throws in error with received comments object, throw Error object.
      * @param comments
      */
     function validateComments(comments) {
 
         if (!comments.comments || !comments.lastUpdate || !validateModule.isValidTimeStamp(comments.lastUpdate) ||
             !validateModule.isValidCommentsObject(comments.comments))
-            throw new Error(ERROR_WITH_API_SERVER)
+            throw new Error(ProgramGlobalsModule.ERROR_WITH_API_SERVER)
     }
 
     /**
@@ -452,16 +479,16 @@
     }
 
     /**
-     * The function gets from the server the time stamp of its last database modification.
+     * The function send a request to server that ask for updates.
      */
     function updateImagesComments() {
-        clearTimeout(TIMEOUT)
+        clearTimeout(ProgramGlobalsModule.TIMEOUT)
         let params = new URLSearchParams()
         //we should replace it with range of dates and not all of the dates, just like nasa that taking start and end.
-        let dates = getPicsDates(IMAGES)
-        dates.push(`"${TIMESTAMP}"`)
+        let dates = getPicsDates(ProgramGlobalsModule.IMAGES)
+        dates.push(`"${ProgramGlobalsModule.TIMESTAMP}"`)
         params.append("images", `[${dates.toString()}]`)
-        fetchRequest(`${COMMENTS_SERVER_URL}/update?${params.toString()}`, setComments,getSpinnersElements(),0)
+        fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}/update?${params.toString()}`, setComments,getSpinnersElements(),0)
     }
 
     /**
@@ -470,7 +497,7 @@
      */
     function getSpinnersElements(){
         let spinnersElementsArr = []
-        IMAGES.forEach((img)=>{
+        ProgramGlobalsModule.IMAGES.forEach((img)=>{
             spinnersElementsArr.push(img.getSpinnerElement())
         })
         return spinnersElementsArr
@@ -497,7 +524,7 @@
      */
     function sendCommentValid(id) {
         let content = document.getElementById(id).value;
-        return content.trim().length > 0;
+        return content && content.trim().length > 0;
     }
 
     /**
@@ -512,10 +539,10 @@
         let isSplit = false
         if (explanation){
             splitDescription =  explanation.split(" ")
-            if (splitDescription.length >= MAX_WORDS_NUMBER_IN_DESCRIPTION) {
+            if (splitDescription.length >= ProgramGlobalsModule.MAX_WORDS_NUMBER_IN_DESCRIPTION) {
                 isSplit = true
-                beforeMore = splitDescription.slice(0, MAX_WORDS_NUMBER_IN_DESCRIPTION).join(" ")
-                afterMore = splitDescription.slice(MAX_WORDS_NUMBER_IN_DESCRIPTION).join(" ")
+                beforeMore = splitDescription.slice(0, ProgramGlobalsModule.MAX_WORDS_NUMBER_IN_DESCRIPTION).join(" ")
+                afterMore = splitDescription.slice(ProgramGlobalsModule.MAX_WORDS_NUMBER_IN_DESCRIPTION).join(" ")
             }
             else
                 beforeMore = explanation
@@ -538,11 +565,11 @@
         }
 
         /**
-         * sets the image comments and last update
+         * sets the image comments - delete the received one to delete from dom and insert the new ones into the
+         * dom (in the right place).
          * @param comments
-         * @param lastUpdate
          */
-        setComments(comments, lastUpdate) {
+        setComments(comments) {
             this.#deleteComments(comments.delete)
             if(comments.add && comments.add.length) {
                 let sortedComments = comments.add
@@ -560,7 +587,8 @@
         }
 
         /**
-         * returns the image html
+         * returns the image html and create it only if it isn't created before.
+         * note: there is no need to save, but we did anyway (and not display it more than once).
          * @returns {*}
          */
         getImageHtml() {
@@ -595,7 +623,7 @@
 
         /**
          * sets the image comments html
-         * @param newComments
+         * @param newComments - the comments to add.
          */
         #setHtmlComments(newComments) {
             const imagePointer = this;
@@ -614,7 +642,7 @@
 
         /**
          * Sets the Html of the comment to show the user info
-         * @param val
+         * @param val - current comment value
          * @returns {HTMLDivElement}
          */
         #getUserDataCol(val) {
@@ -629,8 +657,13 @@
             dateCol.className = "col-12 me-auto text-muted text-break"
             let date = new Date(val.updatedAt);
             let localDate = date.toLocaleDateString();
+            let dateForTheDateOnly  = new Date(localDate)
+            let year = dateForTheDateOnly.getFullYear();
+            let month = (dateForTheDateOnly.getMonth() + 1).toString().padStart(2, '0');
+            let day = dateForTheDateOnly.getDate().toString().padStart(2, '0');
+
             let localTime = date.toLocaleTimeString();
-            dateCol.innerText = `${localDate} ${localTime}`
+            dateCol.innerText = `${year}\\${month}\\${day} ${localTime}`
             row.appendChild(username)
             row.appendChild(dateCol)
             usersDataCol.appendChild(row)
@@ -639,7 +672,7 @@
 
         /**
          * Make the Html of the delete button
-         * @param val
+         * @param val - current comment value
          * @returns {HTMLDivElement}
          */
         #getContentAndDeleteCol(val) {
@@ -690,7 +723,7 @@
         }
 
         /**
-         * This method creates and returns an image or iframe element depends on the data media type
+         * This method creates and returns an image or iframe/img element depends on the data media type
          * @returns {HTMLDivElement}
          */
         #getImage() {
@@ -705,7 +738,7 @@
         }
 
         /**
-         * This method creates and returns an p element with the title of the data
+         * This method creates and returns a div element with the info about the image
          * @returns {HTMLDivElement}
          */
         #getInfo() {
@@ -748,9 +781,9 @@
         }
 
         /**
-         * Make the HTML for the show more of the image description
-         * @param beforeMoreCol
-         * @param afterMoreText
+         * Make the HTML for the read more of the image description
+         * @param beforeMoreCol - the column that holds the description before load more button.
+         * @param afterMoreText - the text that will be opened after pressing read more.
          * @returns {(*|HTMLDivElement)[]}
          */
         #getMoreColumnsElements(beforeMoreCol, afterMoreText){
@@ -789,7 +822,7 @@
             let commentButton = document.createElement('button');
             commentButton.className = "comment-button btn btn-primary "
             commentButton.innerText = 'Comment';
-            commentButton.addEventListener("click", (event) => {
+            commentButton.addEventListener("click", (_) => {
                 document.getElementById(`${this.#date}-comment_button`).classList.add("d-none")
                 document.getElementById(`${this.#date}-div`).classList.toggle("d-none")
             });
@@ -808,25 +841,27 @@
             let button = document.createElement("button");
             button.className = "input-group-text send-comment-button btn btn-primary";
             button.innerText = "Send Comment";
-            button.addEventListener("click", (event) => {
+            button.addEventListener("click", (_) => {
+                const textAreaElement = document.getElementById(`${this.#date}-text-area`)
                 if (sendCommentValid(`${this.#date}-text-area`)) {
                     let message = {
                         method: "POST",
                         headers: {"Content-Type": "application/json"},
                         body: JSON.stringify({
                             "picDate": this.#date,
-                            "content": document.getElementById(`${this.#date}-text-area`).value
+                            "content": textAreaElement.value
                         })
                     }
-                    document.getElementById(`${this.#date}-text-area`).value = ""
+                    textAreaElement.value = ""
                     document.getElementById(`${this.#date}-div`).classList.add("d-none")
                     document.getElementById(`${this.#date}-comment_button`).classList.remove("d-none")
 
-                    fetchRequest(`${COMMENTS_SERVER_URL}`, updateImagesComments,[this.#spinnerElement], undefined, message)
+                    fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}`, updateImagesComments,
+                        [this.#spinnerElement], undefined, message)
                     //fetchRequest(`/users/register`, setComments,getSpinnersElements(),0)
                 }
                 else{
-                    displayError(new Error(INVALID_CONTENT_ERROR))
+                    displayError(new Error(ProgramGlobalsModule.INVALID_CONTENT_ERROR))
                 }
             });
             div.appendChild(button);
@@ -854,7 +889,7 @@
         }
 
         /**
-         * This method creates and returns a button for the user to clikc when he wants to see the comments
+         * This method creates and returns a button for the user to click when he wants to see the comments
          * @returns {HTMLButtonElement}
          */
         #getShowComments() {
@@ -871,9 +906,10 @@
         }
 
         /**
-         * This method creates and returns a ol of all the comments we have in the data for each image
+         * This method creates and returns an ol (inside a div) of all the comments we have in the data for each image
+         * (exclude comments themselves, they added after)
          * returning it with the username and content data.
-         * @returns {HTMLOListElement}
+         * @returns {HTMLDivElement}
          */
         #getCommentsElement() {
             let ans = document.createElement('div')
@@ -910,11 +946,12 @@
             button.className = "btn btn-secondary delete-comment ";
             button.innerText = "Delete";
             button.id = `${this.#date}-${id}-del-button`;
-            button.addEventListener("click", (event) => {
+            button.addEventListener("click", (_) => {
                 let params = new URLSearchParams();
                 params.append("id", id.toString())
                 let message = {method: "DELETE"}
-                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,updateImagesComments, [this.#spinnerElement], undefined, message)
+                fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}?${params.toString()}`,updateImagesComments,
+                    [this.#spinnerElement], undefined, message)
             });
             buttonDiv.appendChild(button)
             return buttonDiv;

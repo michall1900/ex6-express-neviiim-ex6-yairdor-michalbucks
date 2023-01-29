@@ -7,6 +7,7 @@
 Yair and Michal become a couple, Yair and Eliad done ex5 together, so we are taking code from both exercises (ex5 of Yair and Eliad
 and ex5 of Michal).</h3>
 
+<h4>For database, run the command node_modules/.bin/sequelize db:migrate </h4>
 <h3>Note: We have done the polling thing</h3>
 <div>How the polling working?</div>
 <div>
