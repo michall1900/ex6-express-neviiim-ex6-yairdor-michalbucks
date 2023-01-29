@@ -6,21 +6,6 @@ const utilities = require("../modules/utilities.js")
 const renders = require("../modules/renders.js")
 const USER_PARAMS_INDEX = {"email":0, "fName":1, "lName":2};
 
-// /**
-//  * Route that let us see users table. It's for private use, not part of the recommendations.
-//  * @param req
-//  * @param res
-//  * @returns {Promise<*>}
-//  */
-// exports.getDb = (req, res) =>{
-//     return db.User.findAll()
-//         .then((contacts) => res.send(contacts))
-//         .catch((err) => {
-//             console.log('There was an error querying users', JSON.stringify(err))
-//             err.error = 1; // some error code for client side
-//             return res.send(err)
-//         });
-// };
 
 /**
  * This router is extract user's data from the cookie into req.data.
@@ -48,12 +33,6 @@ exports.getUserDataFromCookie = (req,res,next) =>{
  */
 exports.getLoginPage = (req, res) =>{
     renders.renderLoginPage(req,res)
-    // res.render('login',{
-    //     tabTitle: "Login",
-    //     pageTitle: "Please sign in",
-    //     subTitle: "Exercise 6 (part 1: registration)",
-    //     error: req.data.error,
-    // })
 }
 
 /**
@@ -68,7 +47,7 @@ exports.postLogin = async (req, res)=>{
     try{
         const loginUser = db.User.build({
             email: utilities.trimAndLower(req.body.email),
-            password: utilities.trimAndLower(req.body.password)
+            password: req.body.password
         })
         await dbHandler.validateUser(loginUser,["email","password"])
         const user =  await dbHandler.isUserRegisterCheck(loginUser)
@@ -92,16 +71,6 @@ exports.postLogin = async (req, res)=>{
  */
 exports.getFirstRegisterPage = (req, res)=>{
     renders.renderRegisterPage(req,res)
-    // res.render('register',{
-    //     tabTitle: "Register",
-    //     pageTitle: "Please register",
-    //     subTitle: "Register",
-    //     error: req.data.error,
-    //     email:req.data.userDataParams[USER_PARAMS_INDEX.email],
-    //     fName:req.data.userDataParams[USER_PARAMS_INDEX.fName],
-    //     lName: req.data.userDataParams[USER_PARAMS_INDEX.lName]
-    // })
-    //renderRegisterPage(req,res, req.data.error)
 }
 
 /**
@@ -151,25 +120,7 @@ exports.validFirstRegistrationRoute = (req,res, next)=>{
  * @param res
  */
 exports.getPassword = (req,res)=>{
-    // if (!req.data.isAllUserDataExist){
-    //     cookiesHandler.createErrorCookie(req,res, cookiesHandler.EXPIRED_USER_COOKIE)
-    //     res.redirect('/users/register')
-    // }
-    //
-    // else if (!req.data.isOverFirstStep){
-    //     cookiesHandler.createErrorCookie(req,res, cookiesHandler.INVALID_ACCESS)
-    //     res.redirect('/users/register')
-    // }
     renders.renderPasswordPage(req,res)
-    // else {
-    //     res.render('register-password', {
-    //         tabTitle: "Password",
-    //         pageTitle: "Please choose a password",
-    //         subTitle: "Register",
-    //         error: req.data.error
-    //     })
-    //     //renderPasswordPage(res, req.data.error)
-    // }
 
 
 }
@@ -185,15 +136,6 @@ exports.getPassword = (req,res)=>{
  */
 exports.postPassword = async (req,res)=>{
 
-    // if (!req.data.isAllUserDataExist){
-    //     cookiesHandler.createErrorCookie(req,res, cookiesHandler.EXPIRED_USER_COOKIE)
-    //     res.redirect('/users/register')
-    // }
-    //
-    // else if (!req.data.isOverFirstStep){
-    //     cookiesHandler.createErrorCookie(req,res, cookiesHandler.INVALID_ACCESS)
-    //     res.redirect('/users/register')
-    // }
     try {
         await db.User.create({
             email: utilities.trimAndLower(req.data.userDataParams[USER_PARAMS_INDEX.email]),

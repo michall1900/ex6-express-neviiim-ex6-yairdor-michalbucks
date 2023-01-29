@@ -8,12 +8,6 @@ const renderHome = require("../modules/renders.js").getHome
  */
 exports.getHome = (req, res)=>{
     renderHome(req,res)
-    // res.render('home',{
-    //     tabTitle: "Home",
-    //     username: req.session.username,
-    //     token: req.session.userId.toString(),
-    //     error: req.data.error
-    // })
 }
 
 /**

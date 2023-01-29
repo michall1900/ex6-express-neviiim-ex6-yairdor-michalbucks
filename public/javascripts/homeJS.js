@@ -222,9 +222,7 @@
             return renderWindow(response)
         }
         //There is an error we need to handle with
-        else {
-            return getError(response, isNasaRequest)
-        }
+        return getError(response, isNasaRequest)
 
     }
 

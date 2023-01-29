@@ -8,6 +8,8 @@ Yair and Michal become a couple, Yair and Eliad done ex5 together, so we are tak
 and ex5 of Michal).</h3>
 
 <h4>For database, run the command node_modules/.bin/sequelize db:migrate </h4>
+
+
 <h3>Note: We have done the polling thing</h3>
 <div>How the polling working?</div>
 <div>
@@ -128,4 +130,11 @@ In each point here we'll explain how does it work for each url:
             get /home/logout - will logout server, delete session and redirect user to login page.
         </li>
     </ol>
+</div>
+
+<h4> Note </h4>
+<div>
+If user insert a date (includes the lowest nasa's date) that greater than nasa's start date in less 
+than 5 days, nasa's error will appear.Also, it works like this in read more button click. Each click it takes 5 nasa's 
+pictures before the last date so it could happen also in this case.
 </div>

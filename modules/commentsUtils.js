@@ -2,7 +2,6 @@ const db = require("../models");
 const constants = require("../modules/constantsErrorMessageModule");
 const validations = require("../modules/validationModule");
 const Sequelize = require("sequelize");
-const cookiesHandler = require("./cookiesHandler");
 
 const commentsUtils = (function() {
     const KEYS_TO_KEEP_IN_RETURN_COMMENT = ["username","content","id","updatedAt"]
@@ -140,7 +139,6 @@ const commentsUtils = (function() {
             errorMessage+= '</ul>'
             err = errorMessage
         }
-        //res.json(err);
         res.json({"status":400, "msg":err})
     }
 
