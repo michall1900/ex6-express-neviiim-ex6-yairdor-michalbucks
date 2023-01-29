@@ -74,21 +74,46 @@
             return !!object && !((new Date(object)).toString().toLowerCase().includes("invalid date")) && new Date (object) <= new Date()
         }
 
+        /**
+         * checks that the date exists.
+         * @param date
+         * @returns {boolean}
+         */
         const isValidExistDate = (date)=>{
             return isValidDate(date) && !!IMAGES.find(img => img.getDate() === date)
         }
+        /**
+         * checks that all keys are valid dates
+         * @param keys
+         * @returns {*}
+         */
         const isAllKeysAreValidDates = (keys)=>{
             return keys.every((val)=> isValidExistDate(val))
         }
+        /**
+         * Checks that the value can be added
+         * @param addValues
+         * @returns {*}
+         */
         const isValidAddValue = (addValues)=>{
             return addValues.every((elem)=>{return (typeof elem.couldDelete === "boolean" && elem.comment && elem.comment.username
                 && elem.comment.id && elem.comment.content && isValidTimeStamp(elem.comment.updatedAt))})
 
         }
+        /**
+         * Checks that the comment structure is valid
+         * @param CommentsValues
+         * @returns {false|*|boolean}
+         */
         const isValidCommentStructure = (CommentsValues) =>{
             return  CommentsValues.add && CommentsValues.add instanceof Array && isValidAddValue(CommentsValues.add) &&
                 CommentsValues.delete && CommentsValues.delete instanceof Array
         }
+        /**
+         * Checks that the comment object is valid
+         * @param commentsObj
+         * @returns {*|this is unknown[]}
+         */
         const isValidCommentsObject = (commentsObj)=> {
             return (isAllKeysAreValidDates(Object.keys(commentsObj)) &&
                 Object.values(commentsObj).every((val) =>
@@ -199,6 +224,7 @@
             })
     }
 
+
     function redirectUser(response){
         const currentWindow = window
         return Promise.resolve(response)
@@ -226,6 +252,15 @@
             .catch ((err) => {return Promise.reject(new Error(err.message))} )
     }
 
+    /**
+     *
+     * @param url
+     * @param responseHandler
+     * @param spinnerElementsArr
+     * @param dataForResHandler
+     * @param request
+     * @returns {Promise<void>}
+     */
     async function fetchRequest(url, responseHandler,spinnerElementsArr=[], dataForResHandler = undefined, request = {}) {
         //there needs to be many spinners, for loading comments for adding comments.. it can't be just in full page
         let spinnerElements = getValidWorkingSpinners(spinnerElementsArr)
@@ -279,8 +314,6 @@
         spinnerElements.forEach((spinnerElem)=>{
             spinnerElem.classList.add("d-none")})
     }
-
-
 
 
     function onChangeDate(event) {
