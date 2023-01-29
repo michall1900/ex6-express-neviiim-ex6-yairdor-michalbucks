@@ -207,6 +207,11 @@
 
     }
 
+    /**
+     * When the server asks to render the page while we are in a fetch
+     * @param response
+     * @returns {any}
+     */
     function renderWindow(response){
         let parser = new DOMParser();
         return response.text()
@@ -224,7 +229,11 @@
             })
     }
 
-
+    /**
+     * redirects the user
+     * @param response
+     * @returns {Promise<never>}
+     */
     function redirectUser(response){
         const currentWindow = window
         return Promise.resolve(response)
@@ -235,6 +244,12 @@
             })
     }
 
+    /**
+     * returns the error in the response
+     * @param response
+     * @param isNasaRequest
+     * @returns {Promise<never>}
+     */
     function getError(response, isNasaRequest){
         return Promise.resolve(response)
             .then((data)=>{
@@ -253,7 +268,7 @@
     }
 
     /**
-     *
+     *  responsible on fetching new data from the api.
      * @param url
      * @param responseHandler
      * @param spinnerElementsArr
@@ -289,6 +304,11 @@
             })
     }
 
+    /**
+     * push and return the spinner elements
+     * @param spinnerElementsArr
+     * @returns {*[]}
+     */
     function getValidWorkingSpinners(spinnerElementsArr){
         let spinnerElements = []
         spinnerElementsArr.forEach((elem)=>{
@@ -300,7 +320,11 @@
         return spinnerElements
     }
 
-
+    /**
+     * Add headers to the request
+     * @param request
+     * @returns {{headers}|*}
+     */
     function addRelevantHeaders(request){
         if (!request.headers){
             request.headers = {}
@@ -310,12 +334,19 @@
         return request
     }
 
+    /**
+     * turn off spinners
+     * @param spinnerElements
+     */
     function turnOffSpinners(spinnerElements){
         spinnerElements.forEach((spinnerElem)=>{
             spinnerElem.classList.add("d-none")})
     }
 
-
+    /**
+     *
+     * @param event
+     */
     function onChangeDate(event) {
         event.preventDefault();
         //think about moving it somewhere else
@@ -329,6 +360,9 @@
         }
     }
 
+    /**
+     * Sends the request to nasa api to fetch images
+     */
     function sendNasaRequests() {
         const newDate = new Date(currStartDate);
         newDate.setDate(newDate.getDate() - IMAGES_TO_FETCH + 1);
@@ -343,6 +377,10 @@
         currStartDate = newStartDate.toISOString().substring(0, 10);
     }
 
+    /**
+     * Handles the nasa response from the fetch request -> create the HTML based on the response
+     * @param data
+     */
     function handleNasaResponse(data) {
         validateNasaResponse(data)
         let newImages = []
@@ -365,12 +403,21 @@
         SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
     }
 
+    /**
+     * valides nasas response
+     * @param data
+     */
     function validateNasaResponse(data) {
         if (!data || !(data instanceof Array) || !data.length ||
             !data.every((element) => validateModule.isValidURL(element.url) && validateModule.isValidDate(element.date)))
             throw (new Error(ERROR_WITH_NASA_SERVER))
     }
 
+    /**
+     * sets each image and his comments + the timestamp to be the last update on the image
+     * @param comments
+     * @param startIndex
+     */
     function setComments(comments, startIndex) {
         validateComments(comments)
 
@@ -383,6 +430,10 @@
         TIMEOUT = setTimeout(updateImagesComments, 15000);
     }
 
+    /**
+     * validates the comments.
+     * @param comments
+     */
     function validateComments(comments) {
 
         if (!comments.comments || !comments.lastUpdate || !validateModule.isValidTimeStamp(comments.lastUpdate) ||
@@ -391,7 +442,10 @@
     }
 
     /**
-     *
+     * returns the comments in the date specified.
+     * @param comments
+     * @param date
+     * @returns {*}
      */
     function getImageComments(comments, date) {
         return comments[date]??{}
@@ -410,6 +464,10 @@
         fetchRequest(`${COMMENTS_SERVER_URL}/update?${params.toString()}`, setComments,getSpinnersElements(),0)
     }
 
+    /**
+     * finds the image spinners and returns it.
+     * @returns {*[]}
+     */
     function getSpinnersElements(){
         let spinnersElementsArr = []
         IMAGES.forEach((img)=>{
@@ -479,6 +537,11 @@
             this.#displayComments = false;
         }
 
+        /**
+         * sets the image comments and last update
+         * @param comments
+         * @param lastUpdate
+         */
         setComments(comments, lastUpdate) {
             this.#deleteComments(comments.delete)
             if(comments.add && comments.add.length) {
@@ -487,9 +550,19 @@
                 this.#setHtmlComments(sortedComments)
             }
         }
+
+        /**
+         * returns the image element spinners
+         * @returns {*}
+         */
         getSpinnerElement(){
             return this.#spinnerElement
         }
+
+        /**
+         * returns the image html
+         * @returns {*}
+         */
         getImageHtml() {
             if (!this.#imageHtml)
                 this.#initializePictureHtml()
@@ -503,6 +576,11 @@
         getDate() {
             return this.#date;
         }
+
+        /**
+         * Gets the comments to delete from this image and deletes them.
+         * @param commentsToDelete
+         */
         #deleteComments(commentsToDelete){
             const imagePointer = this;
             if (commentsToDelete) {
@@ -514,6 +592,11 @@
                 })
             }
         }
+
+        /**
+         * sets the image comments html
+         * @param newComments
+         */
         #setHtmlComments(newComments) {
             const imagePointer = this;
             newComments.forEach(function (val) {
@@ -529,6 +612,11 @@
             })
         }
 
+        /**
+         * Sets the Html of the comment to show the user info
+         * @param val
+         * @returns {HTMLDivElement}
+         */
         #getUserDataCol(val) {
             let usersDataCol = document.createElement('div');
             usersDataCol.className = "col-12 col-lg-3 col-xl-2"
@@ -549,6 +637,11 @@
             return usersDataCol
         }
 
+        /**
+         * Make the Html of the delete button
+         * @param val
+         * @returns {HTMLDivElement}
+         */
         #getContentAndDeleteCol(val) {
             let contentAndDeleteCol = document.createElement('div');
             contentAndDeleteCol.className = "col-12 col-lg-9 col-xl-10"
@@ -564,6 +657,9 @@
             return contentAndDeleteCol
         }
 
+        /**
+         * init the image HTML
+         */
         #initializePictureHtml() {
             this.#imageHtml = document.createElement('li');
             this.#imageHtml.className = "list-group-item";
@@ -629,6 +725,11 @@
             ans.appendChild(row)
             return ans;
         }
+
+        /**
+         * Make the HTML for the image explanation
+         * @returns {HTMLDivElement}
+         */
         #getExplanation(){
             let {isSplit, beforeMore, afterMore } =isNeedToSplit(this.#data.explanation)
             let thirdCol = document.createElement("div")
@@ -646,6 +747,12 @@
             return thirdCol
         }
 
+        /**
+         * Make the HTML for the show more of the image description
+         * @param beforeMoreCol
+         * @param afterMoreText
+         * @returns {(*|HTMLDivElement)[]}
+         */
         #getMoreColumnsElements(beforeMoreCol, afterMoreText){
             let afterMoreCol = document.createElement("div")
             afterMoreCol.className = "col-auto me-auto mt-2"
