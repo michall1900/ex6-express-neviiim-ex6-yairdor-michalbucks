@@ -22,6 +22,7 @@
     const MAX_WORDS_NUMBER_IN_DESCRIPTION = 30
     let TIMESTAMP = "0"
     const INVALID_DATE_ERROR ="Error, you picked invalid date"
+    const INVALID_CONTENT_ERROR= "Invalid comment content. Comment couldn't be empty or bigger than 128 characters"
 
     /**
      * This module is validates fields.
@@ -70,7 +71,7 @@
          * @returns {boolean}
          */
         function isValidTimeStamp(object) {
-            return !!object && (new Date(object) !== "Invalid Date") && new Date (object) <= new Date()
+            return !!object && !((new Date(object)).toString().toLowerCase().includes("invalid date")) && new Date (object) <= new Date()
         }
 
         const isValidExistDate = (date)=>{
@@ -142,113 +143,145 @@
      * The function is showing the error message to the user inside a modal.
      * @param error - Error object.
      */
-    function errorHandler(error) {
-        // need to fix this function
-        if (error.message) {
-            const [status, errorMsg] = [...error.message.split(",")]
-            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${errorMsg??error}`
-
-        } else {
-            MODAL_ERROR_MESSAGE_ELEMENT.innerText = `${error}`
-        }
+    function displayError(error) {
+        MODAL_ERROR_MESSAGE_ELEMENT.innerHTML = `${error.message ?? error}`
         MODAL_ERROR_BUTTON_ELEMENT.click()
 
 
     }
 
     /**
-     * The function is checking an error if there was status code < 200 or >=300.
-     * The assumption is the response is a response from server.
+     * The function is checking if there was status code < 200 or >=300 in the respone.
+     * It checks if
+     * The assumption is the response is server's response.
      * @param response
      * @param url
      * @returns {Promise<any>}
      */
-    async function status(response,url) {
+    function status(response,url) {
         const isNasaRequest = url.includes(NASA_API_URL)
+
+        //If everything ok
         if (response.status >= MIN_OK_STATUS && response.status < MAX_OK_STATUS) {
-            return response
+            return Promise.resolve(response)
         }
+
+        //If server api ask to redirect
         else if((response.status === 301 || response.status===302) && !isNasaRequest){
-            let data = await response.json()
-            window.location.href= data.redirect
+            return redirectUser(response)
         }
+
+        //If server api wants to render
         else if (response.status === 404 && !isNasaRequest){
-            response.text().then((text)=>{
-                let parser = new DOMParser();
-                let doc = parser.parseFromString(text, "text/html");
+            return renderWindow(response)
+        }
+        //There is an error we need to handle with
+        else {
+            return getError(response, isNasaRequest)
+        }
+
+    }
+
+    function renderWindow(response){
+        let parser = new DOMParser();
+        return response.text()
+            .then(html=>{
+                let doc = parser.parseFromString(html, "text/html");
 
                 // Select the elements that you want to update
-                let container = document.querySelector('#container');
+                let container = document.querySelector('.container');
                 let title = document.querySelector('title');
 
                 // Update the elements
-                container.innerHTML = doc.querySelector('#container').innerHTML;
+                container.innerHTML = doc.querySelector('.container').innerHTML;
                 title.innerHTML = doc.querySelector('title').innerHTML;
+                return Promise.reject(new Error ("Page not found"))
             })
-        }
-        else {
-            try{
-                response.json().then((jsonData)=>{
-                    return Promise.reject(new Error(`status ${jsonData.code??jsonData.status??"unknown"}:
-                     ${jsonData.msg?? jsonData.message??((isNasaRequest)? ERROR_WITH_NASA_SERVER: ERROR_WITH_API_SERVER)}`))
-                })
-            }
-            catch {
-                return response.text().then(text => {
-                    return Promise.reject(`status ${response.status}: error: ${text}`)
-                })
-            }
-        }
     }
 
-    async function fetchRequest(url, responseHandler,spinnerIdArr=[], dataForResHandler = undefined, request = {}) {
+    function redirectUser(response){
+        const currentWindow = window
+        return Promise.resolve(response)
+            .then(res=>res.json())
+            .then((data)=>{
+                currentWindow.location.href= data.redirect
+                return Promise.reject(new Error("Redirected"))
+            })
+    }
+
+    function getError(response, isNasaRequest){
+        return Promise.resolve(response)
+            .then((data)=>{
+                try {
+                    return data.json()
+                }
+                catch{
+                    return Promise.reject(data).then(res=>res.text()).
+                    then(text => Promise.reject(new Error(`status ${response.status??"unknown"}: error: ${text}`)))
+                }
+            })
+            .then((jsonData)=>
+                Promise.reject(new Error(`status ${jsonData.code??jsonData.status}:
+                     ${jsonData.msg?? jsonData.message??((isNasaRequest)? ERROR_WITH_NASA_SERVER: ERROR_WITH_API_SERVER)}`) ))
+            .catch ((err) => {return Promise.reject(new Error(err.message))} )
+    }
+
+    async function fetchRequest(url, responseHandler,spinnerElementsArr=[], dataForResHandler = undefined, request = {}) {
         //there needs to be many spinners, for loading comments for adding comments.. it can't be just in full page
+        let spinnerElements = getValidWorkingSpinners(spinnerElementsArr)
+        request = addRelevantHeaders(request)
+
+        fetch(url, request)
+            .then((res) => {
+                return status(res, url)
+            })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(data => responseHandler(data, dataForResHandler))
+            .catch((err) => {
+                //if there is a problem with nasa response, we don't want to show the load more button.
+                //also, we don't want to timeout work when there is no images.
+                if (url.includes(NASA_API_URL)) {
+                    SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
+                    if (!IMAGES.length)
+                        clearTimeout(TIMEOUT)
+                }
+                displayError(err)
+            })
+            .finally(() => {
+                turnOffSpinners(spinnerElements)
+            })
+    }
+
+    function getValidWorkingSpinners(spinnerElementsArr){
         let spinnerElements = []
-        spinnerIdArr.forEach((spinnerId)=>{
-            let elem = document.getElementById(spinnerId)
+        spinnerElementsArr.forEach((elem)=>{
             if(elem) {
                 spinnerElements.push(elem)
                 elem.classList.remove("d-none")
             }
         })
+        return spinnerElements
+    }
+
+
+    function addRelevantHeaders(request){
         if (!request.headers){
             request.headers = {}
         }
         request.headers['X-Is-Fetch'] = 'true'
         request.headers['token'] = `${TOKEN}`
-        try {
-            let res = await fetch(url,request)
-            res = await status(res,url)
-            if (res) {
-                const data = await res.json()
-                responseHandler(data, dataForResHandler)
-            }
-        } catch (err) {
-            if(url.includes(NASA_API_URL))
-                SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
-            errorHandler(err)
-        }
-        finally {
-            spinnerElements.forEach((spinnerElem)=>{
-                spinnerElem.classList.add("d-none")
-            })
-        }
-
-        // fetch(url, request)
-        //     .then((res) => status(res, url))
-        //     .then(res => res.json())
-        //     .then(data => responseHandler(data, dataForResHandler))
-        //     .catch((err) => {
-        //         if (url.includes(NASA_API_URL))
-        //             SHOW_MORE_BUTTON_ELEMENT.classList.add("d-none")
-        //         errorHandler(err)
-        //     })
-        //     .finally (()=>{
-        //         spinnerElements.forEach((spinnerElem)=>{
-        //             spinnerElem.classList.add("d-none")})
-        //     })
-
+        return request
     }
+
+    function turnOffSpinners(spinnerElements){
+        spinnerElements.forEach((spinnerElem)=>{
+            spinnerElem.classList.add("d-none")})
+    }
+
+
+
 
     function onChangeDate(event) {
         event.preventDefault();
@@ -259,7 +292,7 @@
             IMAGES = [];
             sendNasaRequests()
         } else {
-            errorHandler(new Error(INVALID_DATE_ERROR))
+            displayError(new Error(INVALID_DATE_ERROR))
         }
     }
 
@@ -273,7 +306,7 @@
         params.append("api_key", `${APIKEY}`)
         params.append("start_date", `${start}`)
         params.append("end_date", `${currStartDate}`)
-        fetchRequest(`${NASA_API_URL}?${params.toString()}` ,handleNasaResponse, [SPINNER_BACKGROUND_CLASS_NAME])
+        fetchRequest(`${NASA_API_URL}?${params.toString()}` ,handleNasaResponse, [SPINNER_BACKGROUND_ELEMENT])
         currStartDate = newStartDate.toISOString().substring(0, 10);
     }
 
@@ -295,7 +328,7 @@
         //we should replace it with range of date and not all of the dates, just like nasa that taking start and end.
 
         params.append("images", `[${getPicsDates(newImages).toString()}]`)
-        fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,setComments,[SPINNER_BACKGROUND_CLASS_NAME], startIndex)
+        fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,setComments,[SPINNER_BACKGROUND_ELEMENT], startIndex)
         SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
     }
 
@@ -341,14 +374,15 @@
         let dates = getPicsDates(IMAGES)
         dates.push(`"${TIMESTAMP}"`)
         params.append("images", `[${dates.toString()}]`)
-        fetchRequest(`${COMMENTS_SERVER_URL}/update?${params.toString()}`, setComments,getSpinnersIds(),0)
+        fetchRequest(`${COMMENTS_SERVER_URL}/update?${params.toString()}`, setComments,getSpinnersElements(),0)
     }
-    function getSpinnersIds(){
-        let spinnersIdsArr = []
+
+    function getSpinnersElements(){
+        let spinnersElementsArr = []
         IMAGES.forEach((img)=>{
-            spinnersIdsArr.push(`${img.getDate()}-spinner`)
+            spinnersElementsArr.push(img.getSpinnerElement())
         })
-        return spinnersIdsArr
+        return spinnersElementsArr
     }
 
 
@@ -404,6 +438,7 @@
         #displayComments
         #imageHtml
         #commentsElement
+        #spinnerElement
 
         constructor(item) {
             this.#date = item.date;
@@ -419,7 +454,9 @@
                 this.#setHtmlComments(sortedComments)
             }
         }
-
+        getSpinnerElement(){
+            return this.#spinnerElement
+        }
         getImageHtml() {
             if (!this.#imageHtml)
                 this.#initializePictureHtml()
@@ -462,10 +499,20 @@
         #getUserDataCol(val) {
             let usersDataCol = document.createElement('div');
             usersDataCol.className = "col-12 col-lg-3 col-xl-2"
+            let row = document.createElement('div')
+            row.className = "row"
             let username = document.createElement('div');
-            username.className = "text-dark text-break fw-bold";
+            username.className = "col-12 text-dark text-break fw-bold title-text";
             username.innerText = `${val.username}`;
-            usersDataCol.appendChild(username)
+            let dateCol = document.createElement('div')
+            dateCol.className = "col-12 me-auto text-muted text-break"
+            let date = new Date(val.updatedAt);
+            let localDate = date.toLocaleDateString();
+            let localTime = date.toLocaleTimeString();
+            dateCol.innerText = `${localDate} ${localTime}`
+            row.appendChild(username)
+            row.appendChild(dateCol)
+            usersDataCol.appendChild(row)
             return usersDataCol
         }
 
@@ -597,7 +644,7 @@
             let row = document.createElement("div");
             row.className = "row mt-2";
             row.id = `${this.#date}-comment_button`
-            let col = document.createElement("col")
+            let col = document.createElement("div")
             col.className = "col"
             let commentButton = document.createElement('button');
             commentButton.className = "comment-button btn btn-primary "
@@ -635,10 +682,11 @@
                     document.getElementById(`${this.#date}-div`).classList.add("d-none")
                     document.getElementById(`${this.#date}-comment_button`).classList.remove("d-none")
 
-                    fetchRequest(`${COMMENTS_SERVER_URL}`, updateImagesComments,[`${this.#date}-spinner`], undefined, message)
+                    fetchRequest(`${COMMENTS_SERVER_URL}`, updateImagesComments,[this.#spinnerElement], undefined, message)
+                    //fetchRequest(`/users/register`, setComments,getSpinnersElements(),0)
                 }
                 else{
-                    errorHandler(new Error("Invalid comment content. Comment couldn't be empty or bigger than 128 characters"))
+                    displayError(new Error(INVALID_CONTENT_ERROR))
                 }
             });
             div.appendChild(button);
@@ -707,6 +755,7 @@
             const spinner = document.createElement("div")
             spinner.className="spinner-grow"
             div.appendChild(spinner)
+            this.#spinnerElement = div
             return div
         }
         /**
@@ -725,7 +774,7 @@
                 let params = new URLSearchParams();
                 params.append("id", id.toString())
                 let message = {method: "DELETE"}
-                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,updateImagesComments, [`${this.#date}-spinner`], undefined, message)
+                fetchRequest(`${COMMENTS_SERVER_URL}?${params.toString()}`,updateImagesComments, [this.#spinnerElement], undefined, message)
             });
             buttonDiv.appendChild(button)
             return buttonDiv;

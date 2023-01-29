@@ -4,7 +4,15 @@ const constants = require("../modules/constantsErrorMessageModule");
 const commentsController = require("../modules/commentsUtils");
 
 /**
- * This route receives a get request which contains an images array and returns a json of each image's comments.
+ * This route receives a get request which contains an images dates array (unique) and returns a json of each
+ * image's comments.
+ * In error with input, sending code 400 with the relevant error message (json with Error object).
+ * The comments structure is:
+ * {"comments": {(for every date that found in comments)
+ *      "{date}" :{"add":[{"comment":(comment includes fields content, updatedAt, username, id(of the comment)),
+ *                          "couldDelete": boolean that says if user could delete the comment for client needs}],
+ *                "delete":[](will be empty in this case)}}
+ * "lastUpdate": (date iso string includes the date of the last comment that received/ received time stamp)}
  */
 exports.commentsGet = (req, res) => {
     if(commentsController.validateGetRequest(req,res) && commentsController.validateAllDates(req,res)) {
@@ -20,14 +28,17 @@ exports.commentsGet = (req, res) => {
                 "comments":commentsController.parseComments(comments,
                     false,req.session.userId), "lastUpdate": commentsController.findLastUpdate(comments)});
         })
-            .catch((err) => {
+            .catch((_) => {
                 commentsController.errorMsg(res,constants.FIND_COMMENTS);
             })
     }
 }
 
 /**
- * The route handles the post request of '/' - gets a new comment and adds it to the DB
+ * The route handles the post request of '/' - gets a new comment and adds it to the DB only if the comment is
+ * legal.
+ * In error, sending code 400 with the relevant error message (json with Error object).
+ * In success, send json with {status:200}
  */
 exports.commentsPost = (req,res) => {
     if (commentsController.validateNewCommentInput(req, res)) {
@@ -35,9 +46,9 @@ exports.commentsPost = (req,res) => {
         let username = req.session.username;
         let userid = req.session.userId;
         return db.Comments.create({picDate, username, userid, content})
-            .then((comment) => res.json({status:200}))//res.send(comment))
+            .then((_) => res.json({status:200}))
             .catch((err) => {
-                commentsController.errorMsg(res,constants.CREATE_COMMENT);
+                commentsController.errorMsg(res,err ?? constants.CREATE_COMMENT)//constants.CREATE_COMMENT);
             })
     }
 }
@@ -45,6 +56,8 @@ exports.commentsPost = (req,res) => {
 /**
  * The route deletes a comment from the DB if possible - If the user who tried to
  * delete it is the owner of this comment.
+ * In error, sending code 400 with the relevant error message (json with Error object).
+ * In success, send json with {status:200}
  */
 exports.commentsDelete = (req,res) => {
     if(commentsController.validateDeleteRequestInput(req,res)) {
@@ -63,7 +76,7 @@ exports.commentsDelete = (req,res) => {
             })
             .then(() => res.json({status:200}))
             .catch((err) => {
-                commentsController.errorMsg(res,constants.DELETE_COMMENT);
+                commentsController.errorMsg(res,err.message ?? constants.DELETE_COMMENT);
             })
     }
 }
@@ -72,35 +85,51 @@ exports.commentsDelete = (req,res) => {
  * This route gets dates of images to fetch comments from and a time-stamp that
  * represents that last update the person who sent the request did.
  * returns all comments that got updated later to the timestamp.
+ * The comments structure is:
+ * {"comments": {(for every date that found in comments)
+ *      "{date}" :{"add":[{"comment":(comment includes fields content, updatedAt, username, id(of the comment)),
+ *                          "couldDelete": boolean that says if user could delete the comment for client needs}],
+ *                "delete":[comments ids to delete]}}
+ * "lastUpdate": (date iso string includes the date of the last comment that received/ received time stamp)}
+ * In error, sending code 400 with the relevant error message (json with Error object).
  */
 exports.commentsUpdate = (req,res) => {
     if(commentsController.validateGetRequest(req,res) && commentsController.validateAllDates(req,res)) {
         let dataArray = JSON.parse(req.query.images);
-        let timeStamp= dataArray.pop()
+        let timeStamp = dataArray.pop()
         let date = new Date(timeStamp)
         let stringTimeStamp = date.toISOString()
-        db.Comments.findAll({
-            where: {
-                picDate: {
-                    [Sequelize.Op.or]: dataArray
-                },
-                [Sequelize.Op.or]: [
-                    { createdAt:{
-                            [Sequelize.Op.gt]: stringTimeStamp
-                        }},
-                    { deletionTime:{
-                            [Sequelize.Op.not] : null,
-                            [Sequelize.Op.gt]: stringTimeStamp
-                        }}
-                ]
-            }
-        }).then((comments) => {
-            res.json({
-                "comments":commentsController.parseComments(comments,
-                    true,req.session.userId), "lastUpdate": commentsController.findLastUpdate(comments,timeStamp)})
-        })
-            .catch((err)=>{
-                commentsController.errorMsg(res,constants.UPDATE_COMMENT);
+        if (!dataArray.length)
+            commentsController.errorMsg(res, constants.NO_IMAGES_ERROR);
+        else {
+            db.Comments.findAll({
+                where: {
+                    picDate: {
+                        [Sequelize.Op.or]: dataArray
+                    },
+                    [Sequelize.Op.or]: [
+                        {
+                            createdAt: {
+                                [Sequelize.Op.gt]: stringTimeStamp
+                            }
+                        },
+                        {
+                            deletionTime: {
+                                [Sequelize.Op.not]: null,
+                                [Sequelize.Op.gt]: stringTimeStamp
+                            }
+                        }
+                    ]
+                }
+            }).then((comments) => {
+                res.json({
+                    "comments": commentsController.parseComments(comments,
+                        true, req.session.userId), "lastUpdate": commentsController.findLastUpdate(comments, timeStamp)
+                })
             })
+                .catch((_) => {
+                    commentsController.errorMsg(res, constants.UPDATE_COMMENT);
+                })
+        }
     }
 }

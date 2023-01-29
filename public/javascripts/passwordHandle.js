@@ -16,7 +16,7 @@
             document.getElementById("errorMsg").innerHTML = `${DISTINCT_PASSWORD_ERR}`
         }
     }
-
+    // listeners setting
     document.addEventListener("DOMContentLoaded", (e)=>{
         document.getElementById("register-password-form").addEventListener("submit", validatePasswordForm)
     })

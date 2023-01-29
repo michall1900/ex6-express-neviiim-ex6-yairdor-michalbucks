@@ -1,22 +1,26 @@
-//const userCouldntGetPage = require("../modules/utilities.js").userCouldntGetPage;
+const renderHome = require("../modules/renders.js").getHome
 
-//const constants = require("../modules/constantsErrorMessageModule");
-// exports.checkLogin = (req,res,next)=>{
-//     const isFetch = req.headers && req.headers['x-is-fetch'] === 'true'
-//     if (!req.session.isLogin)
-//         userCouldntGetPage(req,res, constants.NOT_LOGIN_ERROR, "/",isFetch)
-//     else if()
-// }
-
+/**
+ * Render the home page with error if needed, username, includes also token inside the dom and put error message
+ * if needed.
+ * @param req
+ * @param res
+ */
 exports.getHome = (req, res)=>{
-    res.render('home',{
-        tabTitle: "Home",
-        username: req.session.username,
-        token: req.session.userId.toString(),
-        error: req.data.error
-    })
+    renderHome(req,res)
+    // res.render('home',{
+    //     tabTitle: "Home",
+    //     username: req.session.username,
+    //     token: req.session.userId.toString(),
+    //     error: req.data.error
+    // })
 }
 
+/**
+ * This route is handle with logout request - destroy the current session and send redirect response to client.
+ * @param req
+ * @param res
+ */
 exports.getLogout = (req,res) =>{
     req.session.destroy();
     (req.headers && req.headers['x-is-fetch'] === 'true')? res.send(302).json({redirect:'/'}):res.redirect("/")

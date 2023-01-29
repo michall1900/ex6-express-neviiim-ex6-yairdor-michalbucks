@@ -5,7 +5,13 @@ const bcrypt = require("bcrypt");
 const {
   Model
 } = require('sequelize');
-const saltRounds = 10;
+
+const saltRounds = 10;    //for bcrypt
+
+/**
+ * This function is throwing an error if the object is not a string
+ * @param obj
+ */
 const throwIsStringError = (obj)=>{
   if(!isString(obj))
     throw new Error(`Error, the input ${obj} ${constants.INVALID_STRING_ERROR}`)
@@ -29,8 +35,8 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         isStringValidation: throwIsStringError,
         isEmail: {msg: constants.EMAIL_ERR},
-        notEmpty:{msg: `${constants.EMPTY_ERR} email.`},
-        notNull:{msg: `${constants.EMPTY_ERR} email.`},
+        notEmpty:{msg: `${constants.EMPTY_ERR} email`},
+        notNull:{msg: `${constants.EMPTY_ERR} email`},
         max:{
           args:[32],
           msg:`Invalid email. ${constants.MAX_LENGTH_ERR}`
@@ -43,7 +49,7 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         isStringValidation: throwIsStringError,
         isAlpha: {msg:`Invalid first name ${constants.NO_ALPHA_ERR}`},
-        notNull:{msg: `${constants.EMPTY_ERR} first name.`},
+        notNull:{msg: `${constants.EMPTY_ERR} first name`},
         len: {
           args: [3, 32],
           msg: `Invalid first name. ${constants.MIN_AND_MAX_LENGTH_ERR}`
@@ -56,7 +62,7 @@ module.exports = (sequelize, DataTypes) => {
      validate: {
        isStringValidation: throwIsStringError,
        isAlpha: {msg:`Invalid last name ${constants.NO_ALPHA_ERR}`},
-       notNull:{msg: `${constants.EMPTY_ERR} last name.`},
+       notNull:{msg: `${constants.EMPTY_ERR} last name`},
        len: {
          args: [3, 32],
          msg: `Invalid last name. ${constants.MIN_AND_MAX_LENGTH_ERR}`
@@ -68,10 +74,9 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       validate: {
         isStringValidation: throwIsStringError,
-        notEmpty: {msg: `${constants.EMPTY_ERR} password.`},
         notNull:{msg: `${constants.EMPTY_ERR} password.`},
-        max:{
-          args:[32],
+        len:{
+          args:[1,32],
           msg:`Invalid password. ${constants.MAX_LENGTH_ERR}`
         },
         isMatchingPasswords: function(value){
@@ -86,10 +91,9 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       validate: {
         isStringValidation: throwIsStringError,
-        notEmpty: {msg: `${constants.EMPTY_ERR} confirm password.`},
         notNull: {msg: `${constants.EMPTY_ERR} confirm password.`},
-        max:{
-          args:[32],
+        len:{
+          args:[1,32],
           msg:`Invalid confirm password. ${constants.MAX_LENGTH_ERR}`
         }
       }
@@ -104,7 +108,7 @@ module.exports = (sequelize, DataTypes) => {
               user.password = hash;
             })
             .catch(err => {
-              throw new Error();
+              throw new Error(err);
             });
       })
     }

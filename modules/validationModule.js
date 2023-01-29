@@ -1,7 +1,7 @@
-// Note: this module will be move to somewhere else for client's needs.
-
-
-
+/**
+ * This module holds some validation checks.
+ * @type {{isValidDate: (function(*)), isString: (function(*))}}
+ */
 const validationModule = (function(){
 
     /**

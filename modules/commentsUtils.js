@@ -1,22 +1,31 @@
 const db = require("../models");
 const constants = require("../modules/constantsErrorMessageModule");
 const validations = require("../modules/validationModule");
+const Sequelize = require("sequelize");
+const cookiesHandler = require("./cookiesHandler");
 
 const commentsUtils = (function() {
+    const KEYS_TO_KEEP_IN_RETURN_COMMENT = ["username","content","id","updatedAt"]
     /**
      * This function gets a list of comments and user ID - returns a dictionary that
      * represents which comments needs to be added and which deleted.
-     * @param comments
-     * @param isNeedToReceiveDelete
-     * @param userId
+     * The structure is:
+     * (for every date that found in comments)
+     *      "{date}" :{"add":[{"comment":(comment includes fields content, updatedAt, username, id(of the comment)),
+     *                          "couldDelete": boolean that says if user could delete the comment for client needs}],
+     *                 "delete":[](will be empty in this case)
+     *                 }
+     * @param comments - comments records that has been found in table.
+     * @param isNeedToReceiveDelete - boolean that says if there is need to include deleted comments.
+     * @param userId - the current user id - for note the client if the current user could delete the image.
      * @returns {{}}
      */
     const parseComments = (comments, isNeedToReceiveDelete,userId) =>{
         let ans = {};
-        const keysToKeep = ["username","content","id","updatedAt"]
+
         for (let comment of comments){
             let newComment = Object.fromEntries(Object.entries(comment.dataValues)
-                .filter(([key, _]) => keysToKeep.includes(key))
+                .filter(([key, _]) => KEYS_TO_KEEP_IN_RETURN_COMMENT.includes(key))
             );
             if (ans[comment.picDate] === undefined){
                 ans[comment.picDate] = {"add": [], "delete": []}
@@ -33,6 +42,7 @@ const commentsUtils = (function() {
 
     /**
      * This function gets a comment and update its deletion time to now.
+     * The assumption is the comment exist (checked before)
      * @param comment
      */
     const updateCommentDeletion = (comment)=>{
@@ -65,12 +75,14 @@ const commentsUtils = (function() {
         try{
             let dataArray = JSON.parse(req.query.images);
             if (!dataArray || !dataArray.length)
-                throw constants.DATES_INVALID_FORMAT
-            for(let val of dataArray){
-                let tempDate = new Date(val).toISOString().substring(0,10);
-                if ( !validations.isValidDate(tempDate)|| new Date(tempDate).valueOf() > new Date().valueOf()){
-                    errorMsg(res,constants.DATES_INVALID_FORMAT);
-                    return false;
+                errorMsg(res,constants.DATES_INVALID_FORMAT);
+            else{
+                for(let val of dataArray){
+                    let tempDate = new Date(val).toISOString().substring(0,10);
+                    if ( !validations.isValidDate(tempDate)|| new Date(tempDate).valueOf() > new Date().valueOf()){
+                        errorMsg(res,constants.DATES_INVALID_FORMAT);
+                        return false;
+                    }
                 }
             }
         }
@@ -121,13 +133,21 @@ const commentsUtils = (function() {
      */
     const errorMsg = (res, err) => {
         res.status(400);
-        res.json(err);
+        let errorMessage = "<ol>"
+        if (err instanceof Sequelize.ValidationError) {
+
+            err.message.split('\n').forEach((error)=>errorMessage+=`<li>${error}</li>`)
+            errorMessage+= '</ul>'
+            err = errorMessage
+        }
+        //res.json(err);
+        res.json({"status":400, "msg":err})
     }
 
     /**
      * This function finds and returns the last update time among the comments she receives
-     * @param comments
-     * @param timeStamp
+     * @param comments - comments records
+     * @param timeStamp - the time stamp that has been received
      * @returns {string|*}
      */
     const findLastUpdate = (comments=[], timeStamp="0") => {

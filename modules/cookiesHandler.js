@@ -31,7 +31,7 @@ const cookiesHandlerModule = (function(){
      * @param fName - user's first name
      * @param lName - user's last name
      * @param maxAge - cookie lifetime
-     * @param isOverFirstStep -
+     * @param isOverFirstStep - tells if the first registration was valid or not.
      */
     function handleUserDataCookie(req, res,email="",fName="",lName="",isOverFirstStep=false,
                                   maxAge=0){
@@ -43,7 +43,7 @@ const cookiesHandlerModule = (function(){
     }
 
     /**
-     * This function is handle with deleting the user's cookie.
+     * This function is handle with deleting the user's data cookie.
      * @param req
      * @param res
      */
@@ -58,7 +58,7 @@ const cookiesHandlerModule = (function(){
      * @param email - user's email address.
      * @param fName - user's first name
      * @param lName - user's last name
-     * @param isOverFirstStep -
+     * @param isOverFirstStep - tells if the first registration was valid or not.
      */
     function createUserDataCookie(req, res, email, fName, lName, isOverFirstStep){
         handleUserDataCookie(req,res,email,fName,lName,isOverFirstStep,MAX_COOKIE_AGE_IN_MS)
