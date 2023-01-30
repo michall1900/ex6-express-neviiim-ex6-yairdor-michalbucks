@@ -3,14 +3,16 @@
 <h5>Yair's email : yairdo@edu.hac.ac.il, id's: 318169505</h5>
 <h5>Michal's email : michalbu@edu.hac.ac.il, id's: 205980725</h5>
 
+<h4>Note: We are using one extra date. Yair have one left (don't need to lose points because of that), 
+Michal have nothing left (needs to lose 3 points).</h4>
+
 <h3>Note: Maybe part of the code will be similar to Eliad Karni's exercise (the part in this program that using ex5). 
-Yair and Michal become a couple, Yair and Eliad done ex5 together, so we are taking code from both exercises (ex5 of Yair and Eliad
-and ex5 of Michal).</h3>
-
-<h4>For database, run the command node_modules/.bin/sequelize db:migrate </h4>
+Yair and Michal become a couple, Yair and Eliad done ex5 together, so we are taking code from both exercises 
+(ex5 of Yair and Eliad and ex5 of Michal).</h3>
 
 
-<h3>Note: We have done the polling thing</h3>
+<h3>Note: We have done the polling thing (and need to get 5 extra points)</h3>
+
 <div>How the polling working?</div>
 <div>
     If there is an error on update images' comments/ get nasa images (at first time), the timer is stopped until an 
@@ -19,6 +21,8 @@ and ex5 of Michal).</h3>
     him back new timestamp (the maximum between last comment updatedAt time and received timestamp) and the comments
     that client should update. We will talk about the received object later.
 </div>
+
+<h4>For database, run the command node_modules/.bin/sequelize db:migrate </h4>
 
 <h5>Server</h5>
 <div>
