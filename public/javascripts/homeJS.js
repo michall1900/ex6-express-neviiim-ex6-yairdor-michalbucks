@@ -854,8 +854,6 @@
                     document.getElementById(`${this.#date}-div`).classList.add("d-none")
                     document.getElementById(`${this.#date}-comment_button`).classList.remove("d-none")
 
-                    //fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}`, updateImagesComments,
-                    //    [this.#spinnerElement], undefined, message)
                     fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}`, updateImagesComments,
                         [this.#spinnerElement], undefined, message)
                 }
