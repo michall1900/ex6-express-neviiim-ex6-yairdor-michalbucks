@@ -62,10 +62,9 @@
          * @returns {boolean} - true if it is valid date, otherwise false.
          */
         function isValidDate(object) {
-
             return ((!!object && isString(object) &&
-                object.toString().match(/\d{4}-\d{2}-\d{2}/)) &&
-                !(new Date(object).toString().toLowerCase().includes("invalid date"))) && new Date(object) <= new Date()
+                object.match(/\d{4}-\d{2}-\d{2}/)) &&
+                !new Date(object).toString().toLowerCase().includes("invalid date") && new Date(object) <= new Date())
         }
 
 
@@ -75,7 +74,7 @@
          * @returns {boolean}
          */
         const isString = (object) => {
-            return (object instanceof String || typeof (object) === "string")
+            return (!!object && (object instanceof String || typeof (object) === "string"))
         }
 
 
@@ -420,10 +419,8 @@
         ProgramGlobalsModule.IMAGES.push(...newImages)
         let params = new URLSearchParams()
 
-        console.log(ProgramGlobalsModule.IMAGES[ProgramGlobalsModule.IMAGES.length-1].getDate())
-        console.log(ProgramGlobalsModule.IMAGES[0].getDate())
         params.append("start_date", ProgramGlobalsModule.IMAGES[ProgramGlobalsModule.IMAGES.length-1].getDate())
-        params.append("end_date", ProgramGlobalsModule.IMAGES[0].getDate())
+        params.append("end_date",ProgramGlobalsModule.IMAGES[0].getDate())
         fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}?${params.toString()}`,setComments,
             [ProgramGlobalsModule.SPINNER_BACKGROUND_ELEMENT], startIndex)
         ProgramGlobalsModule.SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
@@ -436,7 +433,13 @@
      */
     function validateNasaResponse(data) {
         if (!data || !(data instanceof Array) || !data.length ||
-            !data.every((element) => validateModule.isValidURL(element.url) && validateModule.isValidDate(element.date)))
+            !data.every((element) => {
+                return validateModule.isValidURL(element.url) && validateModule.isValidDate(element.date) &&
+                    !!element.media_type && validateModule.isString(element.media_type) &&
+                    !!element.explanation === validateModule.isString(element.explanation) &&
+                    !!element.title === validateModule.isString(element.title) &&
+                    !!element.copyright === validateModule.isString(element.copyright)
+            }))
             throw (new Error(ProgramGlobalsModule.ERROR_WITH_NASA_SERVER))
     }
 
@@ -488,7 +491,6 @@
         params.append("start_date", ProgramGlobalsModule.IMAGES[ProgramGlobalsModule.IMAGES.length-1].getDate())
         params.append("end_date", ProgramGlobalsModule.IMAGES[0].getDate())
         params.append("timestamp", ProgramGlobalsModule.TIMESTAMP)
-        params.append("images", `${params.toString()}`)
         fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}/update?${params.toString()}`,
             setComments,getSpinnersElements(),0)
     }
@@ -651,7 +653,6 @@
             let dateCol = document.createElement('div')
             dateCol.className = "col-12 me-auto text-muted text-break"
             let date = new Date(val.updatedAt);
-            console.log(date)
             let year = date.getFullYear();
             let month = (date.getMonth() + 1).toString().padStart(2, '0');
             let day = date.getDate().toString().padStart(2, '0');
@@ -850,6 +851,8 @@
                     document.getElementById(`${this.#date}-div`).classList.add("d-none")
                     document.getElementById(`${this.#date}-comment_button`).classList.remove("d-none")
 
+                    //fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}`, updateImagesComments,
+                    //    [this.#spinnerElement], undefined, message)
                     fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}`, updateImagesComments,
                         [this.#spinnerElement], undefined, message)
                 }

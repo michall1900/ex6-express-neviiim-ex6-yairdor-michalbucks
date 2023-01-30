@@ -59,7 +59,7 @@ const commentsUtils = (function() {
      */
     const validateStartAndEndDates= (req,res)=>{
         if (!req.query || !isValidPictureDate(req.query.start_date) || !isValidPictureDate(req.query.end_date) ||
-            !new Date(req.query.start_date) > new Date(req.query.end_date)) {
+            new Date(req.query.start_date) > new Date(req.query.end_date)) {
             errorMsg(res,constants.INVALID_START_OR_AND_DATE)
             return false
         }
@@ -86,7 +86,7 @@ const commentsUtils = (function() {
         }
         else {
             if (req.query.id === undefined) {
-                errorMsg(res,constants.MISSING_PARAMETERS);
+                errorMsg(res,constants.MISSING_COMMENT_ID);
                 return false;
             }
         }
@@ -103,6 +103,10 @@ const commentsUtils = (function() {
         if(req.body === undefined || req.body.picDate === undefined || req.body.content === undefined){
             errorMsg(res,constants.MISSING_PARAMETERS);
             return false;
+        }
+        if (!validations.isValidDate(req.body.picDate) || new Date(req.body.picDate) > new Date()) {
+            errorMsg(res, constants.DATES_INVALID_FORMAT)
+            return false
         }
         return true;
     }
@@ -134,7 +138,7 @@ const commentsUtils = (function() {
      * @param timeStamp - the time stamp that has been received
      * @returns {string|*}
      */
-    const findLastUpdate = (comments=[], timeStamp="0") => {
+    const findLastUpdate = (comments=[], timeStamp=new Date(0).toISOString()) => {
         const max = comments.reduce((max, record)=>{
             return new Date(record.updatedAt).valueOf() > new Date(max.updatedAt).valueOf()? record:max
         },{updatedAt:new Date(0)})
