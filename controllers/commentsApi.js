@@ -15,8 +15,8 @@ const commentsController = require("../modules/commentsUtils");
  * "lastUpdate": (date iso string includes the date of the last comment that received/ received time stamp)}
  */
 exports.commentsGet = (req, res) => {
-    if(commentsController.validateGetRequest(req,res) && commentsController.validateAllDates(req,res)) {
-        let dataArray = JSON.parse(req.query.images);
+    if(commentsController.validateStartAndEndDates(req,res)) {
+        let dataArray = commentsController.getDatesArray(req.query.start_date, req.query.end_date)
         return db.Comments.findAll({
             where: {
                 picDate: {
@@ -54,7 +54,7 @@ exports.commentsPost = (req,res) => {
 }
 
 /**
- * The route deletes a comment from the DB if possible - If the user who tried to
+ * The route deletes a comment from the DB if it possible- if the user who tried to
  * delete it is the owner of this comment.
  * In error, sending code 400 with the relevant error message (json with Error object).
  * In success, send json with {status:200}
@@ -94,10 +94,9 @@ exports.commentsDelete = (req,res) => {
  * In error, sending code 400 with the relevant error message (json with Error object).
  */
 exports.commentsUpdate = (req,res) => {
-    if(commentsController.validateGetRequest(req,res) && commentsController.validateAllDates(req,res)) {
-        let dataArray = JSON.parse(req.query.images);
-        let timeStamp = dataArray.pop()
-        let date = new Date(timeStamp)
+    if (commentsController.validateStartAndEndDates(req,res) && commentsController.validateTimestamp(req,res)){
+        let dataArray = commentsController.getDatesArray(req.query.start_date, req.query.end_date)
+        let date = new Date(req.query.timestamp)
         let stringTimeStamp = date.toISOString()
         if (!dataArray.length)
             commentsController.errorMsg(res, constants.NO_IMAGES_ERROR);
@@ -124,7 +123,8 @@ exports.commentsUpdate = (req,res) => {
             }).then((comments) => {
                 res.json({
                     "comments": commentsController.parseComments(comments,
-                        true, req.session.userId), "lastUpdate": commentsController.findLastUpdate(comments, timeStamp)
+                        true, req.session.userId), "lastUpdate":
+                        commentsController.findLastUpdate(comments, req.query.timestamp)
                 })
             })
                 .catch((_) => {

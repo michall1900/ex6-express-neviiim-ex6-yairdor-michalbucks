@@ -4,7 +4,7 @@
      * @type {{ERROR_WITH_NASA_SERVER: string, SHOW_MORE_BUTTON_ELEMENT, INVALID_CONTENT_ERROR: string, MODAL_ERROR_MESSAGE_ELEMENT, INVALID_DATE_ERROR: string, SPINNER_BACKGROUND_CLASS_NAME: string, MIN_OK_STATUS: number, SPINNER_BACKGROUND_ELEMENT, APIKEY: string, IMAGES_TO_FETCH: number, ERROR_WITH_API_SERVER: string, MAX_OK_STATUS: number, IMAGES: *[], currStartDate, COMMENTS_SERVER_URL: string, USER_DATE_ELEMENT, NASA_API_URL: string, TIMESTAMP: string, MODAL_ERROR_BUTTON_ELEMENT, TOKEN_ID: string, TIMEOUT, TOKEN, CONTENT_ELEMENT, MAX_WORDS_NUMBER_IN_DESCRIPTION: number}}
      */
     const ProgramGlobalsModule = (function(){
-        const APIKEY = ""; //enter your api key here
+        const APIKEY = "aKRnQfhPmxqeskcpdkcfomXKcIGbW1p8FFvuQhsa"; //enter your api key here
         let TIMEOUT
         let IMAGES = [];
         const TOKEN_ID = "token";
@@ -25,7 +25,7 @@
         let USER_DATE_ELEMENT;
         let CONTENT_ELEMENT;
         const MAX_WORDS_NUMBER_IN_DESCRIPTION = 30
-        let TIMESTAMP = "0"
+        let TIMESTAMP = new Date(0).toISOString()
         const INVALID_DATE_ERROR ="Error, you picked invalid date"
         const INVALID_CONTENT_ERROR= "Invalid comment content. Comment couldn't be empty or bigger than 128 characters"
 
@@ -62,9 +62,9 @@
          * @returns {boolean} - true if it is valid date, otherwise false.
          */
         function isValidDate(object) {
-
             return ((!!object && isString(object) &&
-                object.toString().match(/\d{4}-\d{2}-\d{2}/)) && isValidTimeStamp(object))
+                object.match(/\d{4}-\d{2}-\d{2}/)) &&
+                !new Date(object).toString().toLowerCase().includes("invalid date") && new Date(object) <= new Date())
         }
 
 
@@ -74,7 +74,7 @@
          * @returns {boolean}
          */
         const isString = (object) => {
-            return (object instanceof String || typeof (object) === "string")
+            return (!!object && (object instanceof String || typeof (object) === "string"))
         }
 
 
@@ -84,7 +84,10 @@
          * @returns {boolean}
          */
         function isValidTimeStamp(object) {
-            return !!object && !((new Date(object)).toString().toLowerCase().includes("invalid date")) && new Date (object) <= new Date()
+            if (!object || !isString(object) || !(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(object)))
+                return false
+            const d = new Date(object);
+            return d instanceof Date && !isNaN(d) && d.toISOString()===object && d <= new Date();
         }
 
         /**
@@ -270,21 +273,21 @@
      * @returns {Promise<never>}
      */
     function getError(response, isNasaRequest){
-        return Promise.resolve(response)
-            .then((data)=>{
-                try {
-                    return data.json()
+        return response.text()
+            .then ((text)=>{
+                try{
+                    let jsonData = JSON.parse(text)
+                    return Promise.reject(new Error(`status ${jsonData.code??jsonData.status?? response.status},<br>
+                        ${jsonData.msg?? jsonData.message??((isNasaRequest)? ProgramGlobalsModule.ERROR_WITH_NASA_SERVER:
+                        ProgramGlobalsModule.ERROR_WITH_API_SERVER)}`) )
                 }
                 catch{
-                    return Promise.reject(data).then(res=>res.text()).
-                    then(text => Promise.reject(new Error(`status ${response.status??"unknown"}: error: ${text}`)))
+                    return Promise.reject(new Error(`status ${response.status??"unknown"},<br> error: ${text}`))
                 }
-            })
-            .then((jsonData)=>
-                Promise.reject(new Error(`status ${jsonData.code??jsonData.status}:
-                     ${jsonData.msg?? jsonData.message??((isNasaRequest)? ProgramGlobalsModule.ERROR_WITH_NASA_SERVER:
-                    ProgramGlobalsModule.ERROR_WITH_API_SERVER)}`) ))
-            .catch ((err) => {return Promise.reject(new Error(err.message))} )
+            }).
+            catch((err)=>{return Promise.reject(new Error(err.message? err.message:
+                ((isNasaRequest)? ProgramGlobalsModule.ERROR_WITH_NASA_SERVER:
+                ProgramGlobalsModule.ERROR_WITH_API_SERVER)))})
     }
 
     /**
@@ -372,6 +375,9 @@
             ProgramGlobalsModule.currStartDate = ProgramGlobalsModule.USER_DATE_ELEMENT.value;
             ProgramGlobalsModule.CONTENT_ELEMENT.innerHTML = "";
             ProgramGlobalsModule.IMAGES = [];
+            ProgramGlobalsModule.TIMESTAMP = new Date(0).toISOString()
+            clearTimeout(ProgramGlobalsModule.TIMEOUT)
+            ProgramGlobalsModule.TIMEOUT = setTimeout(updateImagesComments, 15000);
             sendNasaRequests()
         } else {
             displayError(new Error(ProgramGlobalsModule.INVALID_DATE_ERROR))
@@ -416,8 +422,8 @@
         ProgramGlobalsModule.IMAGES.push(...newImages)
         let params = new URLSearchParams()
 
-
-        params.append("images", `[${getPicsDates(newImages).toString()}]`)
+        params.append("start_date", ProgramGlobalsModule.IMAGES[ProgramGlobalsModule.IMAGES.length-1].getDate())
+        params.append("end_date",ProgramGlobalsModule.IMAGES[0].getDate())
         fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}?${params.toString()}`,setComments,
             [ProgramGlobalsModule.SPINNER_BACKGROUND_ELEMENT], startIndex)
         ProgramGlobalsModule.SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
@@ -430,7 +436,13 @@
      */
     function validateNasaResponse(data) {
         if (!data || !(data instanceof Array) || !data.length ||
-            !data.every((element) => validateModule.isValidURL(element.url) && validateModule.isValidDate(element.date)))
+            !data.every((element) => {
+                return validateModule.isValidURL(element.url) && validateModule.isValidDate(element.date) &&
+                    !!element.media_type && validateModule.isString(element.media_type) &&
+                    !!element.explanation === validateModule.isString(element.explanation) &&
+                    !!element.title === validateModule.isString(element.title) &&
+                    !!element.copyright === validateModule.isString(element.copyright)
+            }))
             throw (new Error(ProgramGlobalsModule.ERROR_WITH_NASA_SERVER))
     }
 
@@ -479,10 +491,11 @@
     function updateImagesComments() {
         clearTimeout(ProgramGlobalsModule.TIMEOUT)
         let params = new URLSearchParams()
-        let dates = getPicsDates(ProgramGlobalsModule.IMAGES)
-        dates.push(`"${ProgramGlobalsModule.TIMESTAMP}"`)
-        params.append("images", `[${dates.toString()}]`)
-        fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}/update?${params.toString()}`, setComments,getSpinnersElements(),0)
+        params.append("start_date", ProgramGlobalsModule.IMAGES[ProgramGlobalsModule.IMAGES.length-1].getDate())
+        params.append("end_date", ProgramGlobalsModule.IMAGES[0].getDate())
+        params.append("timestamp", ProgramGlobalsModule.TIMESTAMP)
+        fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}/update?${params.toString()}`,
+            setComments,getSpinnersElements(),0)
     }
 
     /**
@@ -497,19 +510,6 @@
         return spinnersElementsArr
     }
 
-
-    /**
-     * The function gets from the NASA response the pictures urls.
-     * @param data The NASA response.
-     * @returns {*[]} A list of the pictures Dates.
-     */
-    function getPicsDates(data) {
-        let pics = [];
-        data.forEach(function (pic) {
-            pics.push(`"${pic.getDate()}"`);
-        });
-        return pics;
-    }
 
     /**
      * The function validates that the received comment isn't empty.
@@ -564,11 +564,15 @@
          * @param comments
          */
         setComments(comments) {
-            this.#deleteComments(comments.delete)
-            if(comments.add && comments.add.length) {
-                let sortedComments = comments.add
-                sortedComments.sort((a, b) => {return a.comment.id - b.comment.id})
-                this.#setHtmlComments(sortedComments)
+            if(comments) {
+                this.#deleteComments(comments.delete)
+                if (comments.add && comments.add.length) {
+                    let sortedComments = comments.add
+                    sortedComments.sort((a, b) => {
+                        return a.comment.id - b.comment.id
+                    })
+                    this.#setHtmlComments(sortedComments)
+                }
             }
         }
 
@@ -652,14 +656,12 @@
             let dateCol = document.createElement('div')
             dateCol.className = "col-12 me-auto text-muted text-break"
             let date = new Date(val.updatedAt);
-            let localDate = date.toLocaleDateString();
-            let dateForTheDateOnly  = new Date(localDate)
-            let year = dateForTheDateOnly.getFullYear();
-            let month = (dateForTheDateOnly.getMonth() + 1).toString().padStart(2, '0');
-            let day = dateForTheDateOnly.getDate().toString().padStart(2, '0');
+            let year = date.getFullYear();
+            let month = (date.getMonth() + 1).toString().padStart(2, '0');
+            let day = date.getDate().toString().padStart(2, '0');
 
             let localTime = date.toLocaleTimeString();
-            dateCol.innerText = `${year}\\${month}\\${day} ${localTime}`
+            dateCol.innerText = `${year}-${month}-${day} ${localTime}`
             row.appendChild(username)
             row.appendChild(dateCol)
             usersDataCol.appendChild(row)
@@ -853,7 +855,8 @@
                     document.getElementById(`${this.#date}-comment_button`).classList.remove("d-none")
 
                     fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}`, updateImagesComments,
-                        [this.#spinnerElement], undefined, message)
+                       [this.#spinnerElement], undefined, message)
+
                 }
                 else{
                     displayError(new Error(ProgramGlobalsModule.INVALID_CONTENT_ERROR))

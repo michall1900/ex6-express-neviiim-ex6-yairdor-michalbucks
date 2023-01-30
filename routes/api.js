@@ -3,7 +3,8 @@ const router = express.Router();
 const comments = require('../controllers/commentsApi')
 
 /**
- * This route receives a get request which contains an images array and returns a json of each image's comments.
+ * This route receives a get request which contains start_date and end_dat of images and returns a json of each image's
+ * comments.
  */
 router.get('/', comments.commentsGet);
 
@@ -19,10 +20,11 @@ router.post('/', comments.commentsPost);
 router.delete('/', comments.commentsDelete);
 
 /**
- * This route gets dates of images to fetch comments from and a time-stamp that
+ * This route gets start_date and end_date of images to fetch comments from and a timestamp that
  * represents that last update the person who sent the request did.
  * returns all comments that got updated later to the timestamp.
  */
 router.get('/update', comments.commentsUpdate);
+
 
 module.exports = router;

@@ -20,7 +20,7 @@ const validationModule = (function(){
      */
     function isValidDate(object) {
         return ((!!object && isString(object) &&
-            object.toString().match(/\d{4}-\d{2}-\d{2}/)) && !((new Date(object)).toString().toLowerCase().includes("invalid date")))
+            object.toString().match(/\d{4}-\d{2}-\d{2}/)) && !(new Date(object).toString().toLowerCase().includes("invalid date")))
     }
 
 

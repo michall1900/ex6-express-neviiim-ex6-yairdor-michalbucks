@@ -3,24 +3,30 @@
 <h5>Yair's email : yairdo@edu.hac.ac.il, id's: 318169505</h5>
 <h5>Michal's email : michalbu@edu.hac.ac.il, id's: 205980725</h5>
 
-<h3>Note: Maybe part of the code will be similar to Eliad Karni's exercise (the part in this program that using ex5). 
-Yair and Michal become a couple, Yair and Eliad done ex5 together, so we are taking code from both exercises (ex5 of Yair and Eliad
-and ex5 of Michal).</h3>
+<h4>Note: We are using one extra date. Yair have one left (don't need to lose points because of that), 
+Michal have nothing left (needs to lose 3 points).</h4>
 
-<h4>For database, run the command node_modules/.bin/sequelize db:migrate </h4>
+<h4>Note: Maybe part of the code will be similar to Eliad Karni's exercise (the part in this program that using ex5). 
+Yair and Michal become a couple, Yair and Eliad done ex5 together, so we are taking code from both exercises 
+(ex5 of Yair and Eliad and ex5 of Michal).</h4>
 
 
-<h3>Note: We have done the polling thing</h3>
-<div>How the polling working?</div>
+<h4>Note: We have done the polling thing (and need to get 5 extra points)</h4>
+
+<h4>How the polling working?</h4>
 <div>
     If there is an error on update images' comments/ get nasa images (at first time), the timer is stopped until an 
     event coming (create/ delete comment) and the response and the request were ok.
     If everything ok, Each 15 seconds the client is sending update request with range of dates and a timestamp, and the server is giving
     him back new timestamp (the maximum between last comment updatedAt time and received timestamp) and the comments
-    that client should update. We will talk about the received object later.
+    that client should update. We will talk about the received object later, but in short explanation - comments' id
+    that deleted in this time are returned, new comments are return (if they added after timestamp) and if there is
+    no update, the comments object is empty and only last update received.
 </div>
 
-<h5>Server</h5>
+<h4>For database, run the command node_modules/.bin/sequelize db:migrate </h4>
+
+<h4>Server</h4>
 <div>
 In each point here we'll explain how does it work for each url:
     <ol>
@@ -80,18 +86,19 @@ In each point here we'll explain how does it work for each url:
                 Status code 302 - will tell the client to redirect.
             </div>
             <div>
-                Status code 400 - will tell about an error while trying to do any api request.
+                Status code 400 - will tell about an error while trying to do any api request(also define for addresses above).
             </div>
             <div>
                 Every request from now on (until user logged out) should include a header called "token" with the token as 
-            a value. 
+                a value. 
                 Also, it's important that when user is trying to fetch, he needs to include a header called 
                 'x-is-fetch': 'true' to tell the server that it is a fetch request (so the answer will give back in an
                 appropriate way).
             </div>
         </li>
         <li>
-            get "/home/api" - Needs to receive a range of dates. If every date is ok, the server will send back an 
+            get "/home/api/" - Needs to receive a range of dates (start_date and end_date when start_date <= end_date). 
+            If all dates are ok (in format yyyy-mm-dd and <= today's date), the server will send back an 
             object that looks like this (in res.json): 
             <div>{"comments": {(for every date that found in comments) </div>
             <div>"{date}" :{"add":[{"comment":(comment that user should insert [the ones that created after the 
@@ -104,8 +111,10 @@ In each point here we'll explain how does it work for each url:
             Its important that client will save the timestamp.
         </li>
         <li>
-            get "/home/api/update" - Needs to receive a range of dates and the last time stamp that client received.
-            If every date is ok and the timestamp valid, the server will send back an object that looks like this (in res.json): 
+            get "/home/api/update" - Needs to receive a range of dates ("start_date" and "end_date" when start_date <= end_date)
+            and the last timestamp (named "timestamp") that client received (ISOString).
+            If all dates are valid (in format yyyy-mm-dd and <= today's date) and the timestamp valid (in ISOString format 
+            and <= today's date), the server will send back an object that looks like this (in res.json): 
             <div>{"comments": {(for every date that found in comments) </div>
             <div>"{date}" :{"add":[{"comment":(comment that user should insert [the ones that created after the 
                                     timestamp]includes fields content, updatedAt, username, id(of the comment)),
@@ -132,9 +141,9 @@ In each point here we'll explain how does it work for each url:
     </ol>
 </div>
 
-<h4> Note </h4>
+<h4> Note about client </h4>
 <div>
 If user insert a date (includes the lowest nasa's date) that greater than nasa's start date in less 
 than 5 days, nasa's error will appear.Also, it works like this in read more button click. Each click it takes 5 nasa's 
-pictures before the last date so it could happen also in this case.
+pictures before the last date, so it could happen also in this case.
 </div>

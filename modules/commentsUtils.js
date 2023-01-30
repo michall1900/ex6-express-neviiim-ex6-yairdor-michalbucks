@@ -2,6 +2,7 @@ const db = require("../models");
 const constants = require("../modules/constantsErrorMessageModule");
 const validations = require("../modules/validationModule");
 const Sequelize = require("sequelize");
+const {isColString} = require("sequelize/lib/utils");
 
 const commentsUtils = (function() {
     const KEYS_TO_KEEP_IN_RETURN_COMMENT = ["username","content","id","updatedAt"]
@@ -21,7 +22,6 @@ const commentsUtils = (function() {
      */
     const parseComments = (comments, isNeedToReceiveDelete,userId) =>{
         let ans = {};
-
         for (let comment of comments){
             let newComment = Object.fromEntries(Object.entries(comment.dataValues)
                 .filter(([key, _]) => KEYS_TO_KEEP_IN_RETURN_COMMENT.includes(key))
@@ -30,7 +30,7 @@ const commentsUtils = (function() {
                 ans[comment.picDate] = {"add": [], "delete": []}
             }
             if (!comment.deletionTime){
-                ans[comment.picDate]["add"].push({"comment":newComment,"couldDelete": comment.userid===userId.toString()});
+                ans[comment.picDate].add.push({"comment":newComment,"couldDelete": comment.userid===userId.toString()});
             }
             else if(isNeedToReceiveDelete){
                 ans[comment.picDate]["delete"].push(comment.id);
@@ -52,46 +52,26 @@ const commentsUtils = (function() {
     }
 
     /**
-     * The function validates that the received get request is in the right syntax needed to the request to function.
-     * @param req The request.
-     * @param res The response.
-     */
-    const validateGetRequest = (req, res) => {
-        if(req.query === undefined || req.query.images === undefined || !req.query.images.length) {
-            errorMsg(res,constants.MISSING_IMAGES);
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * This function validates that all the input in the request query is valid dates.
+     * This function is make sure that start_date and end dates are legal.
      * @param req
      * @param res
      * @returns {boolean}
      */
-    const validateAllDates = (req,res) => {
-        try{
-            let dataArray = JSON.parse(req.query.images);
-            if (!dataArray || !dataArray.length) {
-                errorMsg(res, constants.DATES_INVALID_FORMAT);
-                return false;
-            }
-            else{
-                for(let val of dataArray){
-                    let tempDate = new Date(val).toISOString().substring(0,10);
-                    if ( !validations.isValidDate(tempDate)|| new Date(tempDate).valueOf() > new Date().valueOf()){
-                        errorMsg(res,constants.DATES_INVALID_FORMAT);
-                        return false;
-                    }
-                }
-            }
+    const validateStartAndEndDates= (req,res)=>{
+        if (!req.query || !isValidPictureDate(req.query.start_date) || !isValidPictureDate(req.query.end_date) ||
+            new Date(req.query.start_date) > new Date(req.query.end_date)) {
+            errorMsg(res,constants.INVALID_START_OR_AND_DATE)
+            return false
         }
-        catch {
-            errorMsg(res,constants.CANT_PARSE_DATA);
-            return false;
-        }
-        return true;
+        return true
+    }
+    /**
+     * This function is checking if the date is a valid date for the picture.
+     * @param date
+     * @returns {boolean}
+     */
+    const isValidPictureDate = (date)=>{
+        return (date && validations.isValidDate(date) && new Date(date) <= new Date())
     }
 
     /**
@@ -106,7 +86,7 @@ const commentsUtils = (function() {
         }
         else {
             if (req.query.id === undefined) {
-                errorMsg(res,constants.MISSING_PARAMETERS);
+                errorMsg(res,constants.MISSING_COMMENT_ID);
                 return false;
             }
         }
@@ -123,6 +103,10 @@ const commentsUtils = (function() {
         if(req.body === undefined || req.body.picDate === undefined || req.body.content === undefined){
             errorMsg(res,constants.MISSING_PARAMETERS);
             return false;
+        }
+        if (!validations.isValidDate(req.body.picDate) || new Date(req.body.picDate) > new Date()) {
+            errorMsg(res, constants.DATES_INVALID_FORMAT)
+            return false
         }
         return true;
     }
@@ -154,7 +138,7 @@ const commentsUtils = (function() {
      * @param timeStamp - the time stamp that has been received
      * @returns {string|*}
      */
-    const findLastUpdate = (comments=[], timeStamp="0") => {
+    const findLastUpdate = (comments=[], timeStamp=new Date(0).toISOString()) => {
         const max = comments.reduce((max, record)=>{
             return new Date(record.updatedAt).valueOf() > new Date(max.updatedAt).valueOf()? record:max
         },{updatedAt:new Date(0)})
@@ -162,9 +146,62 @@ const commentsUtils = (function() {
             return max.updatedAt.toISOString()
         return timeStamp
     }
+    /**
+     * This function is checking if a string is in ISODate format.
+     * The assumption is str is a string.
+     * The function token from stack overflow:
+     * https://stackoverflow.com/questions/52869695/check-if-a-date-string-is-in-iso-and-utc-format
+     * @param str - string object
+     * @returns {boolean}
+     */
+    const isIsoDate =(str) =>{
+        if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str))
+            return false;
+        const d = new Date(str);
+        return d instanceof Date && !isNaN(d) && d.toISOString()===str;
+    }
+
+    /**
+     * This function is validate that the received timestamp is in the correct format.
+     * @param req
+     * @param res
+     * @returns {boolean}
+     */
+    const validateTimestamp = (req, res)=>{
+        if (!req.query.timestamp  || !validations.isString(req.query.timestamp) || !isIsoDate(req.query.timestamp) ||
+            new Date(req.query.timestamp) > new Date()) {
+            errorMsg(res, constants.INVALID_TIME_STAMP)
+            return false
+        }
+        return true
+    }
+
+    /**
+     * Return array of dates in picture format dates that in range between start and end dates
+     * @param startDateStr - the first picture's date
+     * @param endDateStr - the last picture's date
+     * @returns {*[]} - pictures' date array.
+     */
+    const getDatesArray = (startDateStr, endDateStr)=>{
+        let datesArr = []
+        console.log(startDateStr, endDateStr)
+        let tempDateStr = endDateStr
+        let tempDate = new Date(tempDateStr)
+        let startDate = new Date(startDateStr)
+        while (startDate<= tempDate){
+            tempDateStr = tempDate.toISOString().substring(0, 10);
+            datesArr.push(tempDateStr)
+            tempDate = new Date(tempDate.getTime())
+            tempDate.setDate(tempDate.getDate() -1)
+
+
+        }
+        return datesArr
+    }
+
 
     return {findLastUpdate, updateCommentDeletion, parseComments, errorMsg, validateNewCommentInput,
-        validateDeleteRequestInput, validateAllDates, validateGetRequest }
+        validateDeleteRequestInput, validateTimestamp, validateStartAndEndDates, getDatesArray}
 
 })()
 
