@@ -4,7 +4,7 @@
      * @type {{ERROR_WITH_NASA_SERVER: string, SHOW_MORE_BUTTON_ELEMENT, INVALID_CONTENT_ERROR: string, MODAL_ERROR_MESSAGE_ELEMENT, INVALID_DATE_ERROR: string, SPINNER_BACKGROUND_CLASS_NAME: string, MIN_OK_STATUS: number, SPINNER_BACKGROUND_ELEMENT, APIKEY: string, IMAGES_TO_FETCH: number, ERROR_WITH_API_SERVER: string, MAX_OK_STATUS: number, IMAGES: *[], currStartDate, COMMENTS_SERVER_URL: string, USER_DATE_ELEMENT, NASA_API_URL: string, TIMESTAMP: string, MODAL_ERROR_BUTTON_ELEMENT, TOKEN_ID: string, TIMEOUT, TOKEN, CONTENT_ELEMENT, MAX_WORDS_NUMBER_IN_DESCRIPTION: number}}
      */
     const ProgramGlobalsModule = (function(){
-        const APIKEY = "aKRnQfhPmxqeskcpdkcfomXKcIGbW1p8FFvuQhsa"; //enter your api key here
+        const APIKEY = ""; //enter your api key here
         let TIMEOUT
         let IMAGES = [];
         const TOKEN_ID = "token";
