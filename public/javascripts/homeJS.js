@@ -855,7 +855,8 @@
                     document.getElementById(`${this.#date}-comment_button`).classList.remove("d-none")
 
                     fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}`, updateImagesComments,
-                        [this.#spinnerElement], undefined, message)
+                       [this.#spinnerElement], undefined, message)
+
                 }
                 else{
                     displayError(new Error(ProgramGlobalsModule.INVALID_CONTENT_ERROR))
