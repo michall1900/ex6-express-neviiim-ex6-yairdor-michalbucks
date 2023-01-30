@@ -30,13 +30,11 @@ exports.getAuthorizeCheck = (req,res,next)=>{
         next()
     else if(isLogin && req.url === ("/"))
         userCouldntGetPage(req,res,undefined,"/home",isFetch)
-    else if(isTryingToGetHome && isLogin && isHasToken && !isTokensSame)
-        userCouldntGetPage(req,res, constants.LOGIN_TO_ANOTHER_USER, "/home",isFetch)
     else if (isLogin && !isTryingToGetHome)
         userCouldntGetPage(req,res, constants.CANT_GET_LOGIN_PAGE_ERROR, "/home",isFetch)
     else if (!isLogin && isTryingToGetHome)
         userCouldntGetPage(req,res, constants.NOT_LOGIN_ERROR, "/",isFetch)
     else
-        res.status(300).send(constants.INVALID_TOKEN)
-
+        res.status(400).json({"status": 400, "msg": constants.INVALID_TOKEN})
+        //res.status(300).send( constants.INVALID_TOKEN)
 }

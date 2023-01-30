@@ -32,8 +32,8 @@ const constantsErrorMessageModule= (function(){
     const CANT_GET_LOGIN_PAGE_ERROR = "You are login. You can't get registration/ login pages"
     const COMMENT_NOT_FOUND = "Comment not found, maybe deleted before"
     const CANT_DELETE_COMMENT = "You can't delete this comment"
-    const LOGIN_TO_ANOTHER_USER = "You are logged in from another user"
-    const INVALID_TOKEN = "You got invalid token. Please try to login again or refresh the page"
+    const INVALID_TOKEN = "You have invalid token, maybe you are connected to another user. " +
+        "Please try to refresh the page or login again."
     const WRONG_ADDRESS = " or you tried to get wrong address"
     const NO_IMAGES_ERROR = "No images given while trying to update/ give new comments"
     const UNKNOWN_ERROR = "There was a problem with server api response"
@@ -43,7 +43,7 @@ const constantsErrorMessageModule= (function(){
         INVALID_PASSWORD_ERR, LOGIN_ERR, SOMETHING_WENT_WRONG,INVALID_STRING_ERROR, FIND_COMMENTS,
         CREATE_COMMENT, DELETE_COMMENT,UPDATE_COMMENT, MISSING_IMAGES, DATES_INVALID_FORMAT,
         CANT_PARSE_DATA, REQUEST_NO_QUERY, MISSING_PARAMETERS, COULDNT_FIND_UPDATE_DATE, USERNAME_ERROR, TOO_LONG,
-        NOT_LOGIN_ERROR, CANT_GET_LOGIN_PAGE_ERROR, COMMENT_NOT_FOUND, CANT_DELETE_COMMENT,LOGIN_TO_ANOTHER_USER,
+        NOT_LOGIN_ERROR, CANT_GET_LOGIN_PAGE_ERROR, COMMENT_NOT_FOUND, CANT_DELETE_COMMENT,
         INVALID_TOKEN,WRONG_ADDRESS, NO_IMAGES_ERROR, UNKNOWN_ERROR
 
     }
