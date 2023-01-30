@@ -417,7 +417,11 @@
         let params = new URLSearchParams()
 
 
-        params.append("images", `[${getPicsDates(newImages).toString()}]`)
+        //params.append("images", `[${getPicsDates(newImages).toString()}]`)
+        console.log(ProgramGlobalsModule.IMAGES[ProgramGlobalsModule.IMAGES.length-1].getDate())
+        console.log(ProgramGlobalsModule.IMAGES[0].getDate())
+        params.append("start_date", ProgramGlobalsModule.IMAGES[ProgramGlobalsModule.IMAGES.length-1].getDate())
+        params.append("end_date", ProgramGlobalsModule.IMAGES[0].getDate())
         fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}?${params.toString()}`,setComments,
             [ProgramGlobalsModule.SPINNER_BACKGROUND_ELEMENT], startIndex)
         ProgramGlobalsModule.SHOW_MORE_BUTTON_ELEMENT.classList.remove("d-none")
@@ -479,9 +483,12 @@
     function updateImagesComments() {
         clearTimeout(ProgramGlobalsModule.TIMEOUT)
         let params = new URLSearchParams()
-        let dates = getPicsDates(ProgramGlobalsModule.IMAGES)
-        dates.push(`"${ProgramGlobalsModule.TIMESTAMP}"`)
-        params.append("images", `[${dates.toString()}]`)
+        //let dates = getPicsDates(ProgramGlobalsModule.IMAGES)
+        //dates.push(`"${ProgramGlobalsModule.TIMESTAMP}"`)
+        params.append("start_date", ProgramGlobalsModule.IMAGES[ProgramGlobalsModule.IMAGES.length-1].getDate())
+        params.append("end_date", ProgramGlobalsModule.IMAGES[0].getDate())
+        params.append("timestamp", ProgramGlobalsModule.TIMESTAMP)
+        params.append("images", `${params.toString()}`)
         fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}/update?${params.toString()}`, setComments,getSpinnersElements(),0)
     }
 

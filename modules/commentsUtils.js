@@ -22,7 +22,6 @@ const commentsUtils = (function() {
      */
     const parseComments = (comments, isNeedToReceiveDelete,userId) =>{
         let ans = {};
-
         for (let comment of comments){
             let newComment = Object.fromEntries(Object.entries(comment.dataValues)
                 .filter(([key, _]) => KEYS_TO_KEEP_IN_RETURN_COMMENT.includes(key))
@@ -31,7 +30,7 @@ const commentsUtils = (function() {
                 ans[comment.picDate] = {"add": [], "delete": []}
             }
             if (!comment.deletionTime){
-                ans[comment.picDate]["add"].push({"comment":newComment,"couldDelete": comment.userid===userId.toString()});
+                ans[comment.picDate].add.push({"comment":newComment,"couldDelete": comment.userid===userId.toString()});
             }
             else if(isNeedToReceiveDelete){
                 ans[comment.picDate]["delete"].push(comment.id);
@@ -206,8 +205,8 @@ const commentsUtils = (function() {
      * @returns {boolean}
      */
     const validateTimestamp = (req, res)=>{
-        if (!req.timestamp  || !validations.isString(req.timestamp) || !isIsoDate(req.timestamp) ||
-            new Date(req.timestamp) > new Date(0)) {
+        if (!req.query.timestamp  || !validations.isString(req.query.timestamp) || !isIsoDate(req.query.timestamp) ||
+            new Date(req.query.timestamp) > new Date()) {
             errorMsg(res, constants.INVALID_TIME_STAMP)
             return false
         }
@@ -223,14 +222,15 @@ const commentsUtils = (function() {
     const getDatesArray = (startDateStr, endDateStr)=>{
         let datesArr = []
         console.log(startDateStr, endDateStr)
-        let tempDateStr = startDateStr
+        let tempDateStr = endDateStr
         let tempDate = new Date(tempDateStr)
-        let endDate = new Date(endDateStr)
-        while (tempDate<= endDate){
-            tempDateStr = new Date(tempDate.getTime()).toISOString().substring(0, 10);
+        let startDate = new Date(startDateStr)
+        while (startDate<= tempDate){
+            tempDateStr = tempDate.toISOString().substring(0, 10);
             datesArr.push(tempDateStr)
             tempDate = new Date(tempDate.getTime())
-            tempDate.setDate(tempDate.getDate() +1)
+            tempDate.setDate(tempDate.getDate() -1)
+
 
         }
         return datesArr

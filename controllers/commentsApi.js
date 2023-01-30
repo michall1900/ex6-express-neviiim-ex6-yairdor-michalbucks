@@ -99,19 +99,20 @@ exports.commentsDelete = (req,res) => {
 exports.commentsUpdate = (req,res) => {
     //if(commentsController.validateGetRequest(req,res) && commentsController.validateAllDates(req,res)) {
     if (commentsController.validateStartAndEndDates(req,res) && commentsController.validateTimestamp(req,res)){
-        let dataArray = JSON.parse(req.query.images);
-        let timeStamp = dataArray.pop()
-        let date = new Date(timeStamp)
+        let dataArray = commentsController.getDatesArray(req.query.start_date, req.query.end_date)
+        //let dataArray = JSON.parse(req.query.images);
+        //let timeStamp = dataArray.pop()
+        let date = new Date(req.query.timestamp)
         let stringTimeStamp = date.toISOString()
         if (!dataArray.length)
             commentsController.errorMsg(res, constants.NO_IMAGES_ERROR);
         else {
             db.Comments.findAll({
                 where: {
-                    // picDate: {
-                    //     [Sequelize.Op.or]: dataArray
-                    // },
-                    where: Sequelize.literal(`date(picDate) BETWEEN date('${req.query.start_date}') AND date('${req.query.end_date}')`),
+                    picDate: {
+                        [Sequelize.Op.or]: dataArray
+                    },
+                    // where: Sequelize.literal(`date(picDate) BETWEEN date('${req.query.start_date}') AND date('${req.query.end_date}')`),
                     [Sequelize.Op.or]: [
                         {
                             createdAt: {
@@ -129,7 +130,7 @@ exports.commentsUpdate = (req,res) => {
             }).then((comments) => {
                 res.json({
                     "comments": commentsController.parseComments(comments,
-                        true, req.session.userId), "lastUpdate": commentsController.findLastUpdate(comments, timeStamp)
+                        true, req.session.userId), "lastUpdate": commentsController.findLastUpdate(comments, req.query.timestamp)
                 })
             })
                 .catch((_) => {
