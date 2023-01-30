@@ -197,8 +197,7 @@ const commentsUtils = (function() {
 
 
     return {findLastUpdate, updateCommentDeletion, parseComments, errorMsg, validateNewCommentInput,
-        validateDeleteRequestInput, validateAllDates, validateTimestamp, validateStartAndEndDates,
-        getDatesArray}
+        validateDeleteRequestInput, validateTimestamp, validateStartAndEndDates, getDatesArray}
 
 })()
 
