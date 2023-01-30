@@ -375,6 +375,9 @@
             ProgramGlobalsModule.currStartDate = ProgramGlobalsModule.USER_DATE_ELEMENT.value;
             ProgramGlobalsModule.CONTENT_ELEMENT.innerHTML = "";
             ProgramGlobalsModule.IMAGES = [];
+            ProgramGlobalsModule.TIMESTAMP = new Date(0).toISOString()
+            clearTimeout(ProgramGlobalsModule.TIMEOUT)
+            ProgramGlobalsModule.TIMEOUT = setTimeout(updateImagesComments, 15000);
             sendNasaRequests()
         } else {
             displayError(new Error(ProgramGlobalsModule.INVALID_DATE_ERROR))

@@ -36,5 +36,4 @@ exports.getAuthorizeCheck = (req,res,next)=>{
         userCouldntGetPage(req,res, constants.NOT_LOGIN_ERROR, "/",isFetch)
     else
         res.status(400).json({"status": 400, "msg": constants.INVALID_TOKEN})
-        //res.status(300).send( constants.INVALID_TOKEN)
 }

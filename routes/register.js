@@ -7,7 +7,6 @@ router.use("/*", users.getUserDataFromCookie)
 
 router.get("/register", users.getFirstRegisterPage)
 router.post("/register", users.postFirstRegisterPage)
-//router.get("/getDb", users.getDb)
 
 router.use("/register-password", users.validFirstRegistrationRoute)
 router.get("/register-password", users.getPassword)
