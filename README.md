@@ -19,7 +19,9 @@ Yair and Michal become a couple, Yair and Eliad done ex5 together, so we are tak
     event coming (create/ delete comment) and the response and the request were ok.
     If everything ok, Each 15 seconds the client is sending update request with range of dates and a timestamp, and the server is giving
     him back new timestamp (the maximum between last comment updatedAt time and received timestamp) and the comments
-    that client should update. We will talk about the received object later.
+    that client should update. We will talk about the received object later, but in short explanation - comments' id
+    that deleted in this time are returned, new comments are return (if they added after timestamp) and if there is
+    no update, the comments object is empty and only last update received.
 </div>
 
 <h4>For database, run the command node_modules/.bin/sequelize db:migrate </h4>
