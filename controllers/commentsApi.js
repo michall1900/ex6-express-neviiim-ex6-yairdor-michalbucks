@@ -18,6 +18,7 @@ exports.commentsGet = (req, res) => {
     //if(commentsController.validateGetRequest(req,res) && commentsController.validateAllDates(req,res)) {
     if(commentsController.validateStartAndEndDates(req,res)) {
         let dataArray = commentsController.getDatesArray(req.query.start_date, req.query.end_date)
+        console.log(dataArray)
         console.log(req.query.start_date, req.query.end_date)
         return db.Comments.findAll({
             where: {
