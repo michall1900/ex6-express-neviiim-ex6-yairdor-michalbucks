@@ -25,7 +25,7 @@
         let USER_DATE_ELEMENT;
         let CONTENT_ELEMENT;
         const MAX_WORDS_NUMBER_IN_DESCRIPTION = 30
-        let TIMESTAMP = "0"
+        let TIMESTAMP = new Date("0").toISOString()
         const INVALID_DATE_ERROR ="Error, you picked invalid date"
         const INVALID_CONTENT_ERROR= "Invalid comment content. Comment couldn't be empty or bigger than 128 characters"
 

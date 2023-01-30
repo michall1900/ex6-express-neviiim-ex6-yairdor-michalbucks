@@ -15,8 +15,10 @@ const commentsController = require("../modules/commentsUtils");
  * "lastUpdate": (date iso string includes the date of the last comment that received/ received time stamp)}
  */
 exports.commentsGet = (req, res) => {
-    if(commentsController.validateGetRequest(req,res) && commentsController.validateAllDates(req,res)) {
-        let dataArray = JSON.parse(req.query.images);
+    //if(commentsController.validateGetRequest(req,res) && commentsController.validateAllDates(req,res)) {
+    if(commentsController.validateStartAndEndDates(req,res)) {
+        let dataArray = commentsController.getDatesArray(req.query.start_date, req.query.end_date)
+        console.log(req.query.start_date, req.query.end_date)
         return db.Comments.findAll({
             where: {
                 picDate: {
@@ -94,7 +96,8 @@ exports.commentsDelete = (req,res) => {
  * In error, sending code 400 with the relevant error message (json with Error object).
  */
 exports.commentsUpdate = (req,res) => {
-    if(commentsController.validateGetRequest(req,res) && commentsController.validateAllDates(req,res)) {
+    //if(commentsController.validateGetRequest(req,res) && commentsController.validateAllDates(req,res)) {
+    if (commentsController.validateStartAndEndDates(req,res) && commentsController.validateTimestamp(req,res)){
         let dataArray = JSON.parse(req.query.images);
         let timeStamp = dataArray.pop()
         let date = new Date(timeStamp)
@@ -104,9 +107,10 @@ exports.commentsUpdate = (req,res) => {
         else {
             db.Comments.findAll({
                 where: {
-                    picDate: {
-                        [Sequelize.Op.or]: dataArray
-                    },
+                    // picDate: {
+                    //     [Sequelize.Op.or]: dataArray
+                    // },
+                    where: Sequelize.literal(`date(picDate) BETWEEN date('${req.query.start_date}') AND date('${req.query.end_date}')`),
                     [Sequelize.Op.or]: [
                         {
                             createdAt: {

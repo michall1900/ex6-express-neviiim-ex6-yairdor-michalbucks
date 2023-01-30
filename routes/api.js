@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const comments = require('../controllers/commentsApi')
+const db = require('../models');
 
 /**
  * This route receives a get request which contains an images array and returns a json of each image's comments.
@@ -24,5 +25,9 @@ router.delete('/', comments.commentsDelete);
  * returns all comments that got updated later to the timestamp.
  */
 router.get('/update', comments.commentsUpdate);
+
+router.get('/db', (req,res)=>{
+    return db.Comments.findAll().then((comments) =>{res.json(comments)})
+})
 
 module.exports = router;

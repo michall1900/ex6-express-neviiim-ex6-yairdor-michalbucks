@@ -11,7 +11,7 @@ router.use((req,res,next) =>{
 router.use(cache.setCache)
 router.use(error.getErrorCookie)
 
-router.use(authorizeCheck.getAuthorizeCheck)
+//router.use(authorizeCheck.getAuthorizeCheck)
 
 
 module.exports = router;

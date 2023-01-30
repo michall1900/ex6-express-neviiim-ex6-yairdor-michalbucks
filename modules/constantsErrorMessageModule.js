@@ -37,6 +37,10 @@ const constantsErrorMessageModule= (function(){
     const WRONG_ADDRESS = " or you tried to get wrong address"
     const NO_IMAGES_ERROR = "No images given while trying to update/ give new comments"
     const UNKNOWN_ERROR = "There was a problem with server api response"
+    const INVALID_TIME_STAMP = "Invalid time stamp, you should send a time stamp in ISOString format that <= " +
+        "today's time stamp."
+    const INVALID_START_OR_AND_DATE = "Error, you should give start_date and end_date in format yyyy-mm-dd with " +
+        "start_date <= end_date"
 
     return {
         EMAIL_EXIST_ERR, EMPTY_ERR, MIN_AND_MAX_LENGTH_ERR, MAX_LENGTH_ERR, NO_ALPHA_ERR,EMAIL_ERR,
@@ -44,7 +48,7 @@ const constantsErrorMessageModule= (function(){
         CREATE_COMMENT, DELETE_COMMENT,UPDATE_COMMENT, MISSING_IMAGES, DATES_INVALID_FORMAT,
         CANT_PARSE_DATA, REQUEST_NO_QUERY, MISSING_PARAMETERS, COULDNT_FIND_UPDATE_DATE, USERNAME_ERROR, TOO_LONG,
         NOT_LOGIN_ERROR, CANT_GET_LOGIN_PAGE_ERROR, COMMENT_NOT_FOUND, CANT_DELETE_COMMENT,
-        INVALID_TOKEN,WRONG_ADDRESS, NO_IMAGES_ERROR, UNKNOWN_ERROR
+        INVALID_TOKEN,WRONG_ADDRESS, NO_IMAGES_ERROR, UNKNOWN_ERROR, INVALID_TIME_STAMP, INVALID_START_OR_AND_DATE
 
     }
 })();

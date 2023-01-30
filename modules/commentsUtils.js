@@ -2,6 +2,7 @@ const db = require("../models");
 const constants = require("../modules/constantsErrorMessageModule");
 const validations = require("../modules/validationModule");
 const Sequelize = require("sequelize");
+const {isColString} = require("sequelize/lib/utils");
 
 const commentsUtils = (function() {
     const KEYS_TO_KEEP_IN_RETURN_COMMENT = ["username","content","id","updatedAt"]
@@ -63,7 +64,28 @@ const commentsUtils = (function() {
         }
         return true;
     }
-
+    /**
+     * This function is make sure that start_date and end dates are legal.
+     * @param req
+     * @param res
+     * @returns {boolean}
+     */
+    const validateStartAndEndDates= (req,res)=>{
+        if (!req.query || !isValidPictureDate(req.query.start_date) || !isValidPictureDate(req.query.end_date) ||
+            !new Date(req.query.start_date) > new Date(req.query.end_date)) {
+            errorMsg(res,constants.INVALID_START_OR_AND_DATE)
+            return false
+        }
+        return true
+    }
+    /**
+     * This function is checking if the date is a valid date for the picture.
+     * @param date
+     * @returns {boolean}
+     */
+    const isValidPictureDate = (date)=>{
+        return (date && validations.isValidDate(date) && new Date(date) <= new Date())
+    }
     /**
      * This function validates that all the input in the request query is valid dates.
      * @param req
@@ -162,9 +184,62 @@ const commentsUtils = (function() {
             return max.updatedAt.toISOString()
         return timeStamp
     }
+    /**
+     * This function is checking if a string is in ISODate format.
+     * The assumption is str is a string.
+     * The function token from stack overflow:
+     * https://stackoverflow.com/questions/52869695/check-if-a-date-string-is-in-iso-and-utc-format
+     * @param str - string object
+     * @returns {boolean}
+     */
+    const isIsoDate =(str) =>{
+        if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str))
+            return false;
+        const d = new Date(str);
+        return d instanceof Date && !isNaN(d) && d.toISOString()===str; // valid date
+    }
+
+    /**
+     * This function is validate that the received timestamp is in the correct format.
+     * @param req
+     * @param res
+     * @returns {boolean}
+     */
+    const validateTimestamp = (req, res)=>{
+        if (!req.timestamp  || !validations.isString(req.timestamp) || !isIsoDate(req.timestamp) ||
+            new Date(req.timestamp) > new Date(0)) {
+            errorMsg(res, constants.INVALID_TIME_STAMP)
+            return false
+        }
+        return true
+    }
+
+    /**
+     * Return array of dates in picture format that in range of start and end dates
+     * @param startDateStr - the first picture's date
+     * @param endDateStr - the last picture's date
+     * @returns {*[]} - pictures' date array.
+     */
+    const getDatesArray = (startDateStr, endDateStr)=>{
+        let datesArr = []
+        console.log(startDateStr, endDateStr)
+        let tempDateStr = startDateStr
+        let tempDate = new Date(tempDateStr)
+        let endDate = new Date(endDateStr)
+        while (tempDate<= endDate){
+            tempDateStr = new Date(tempDate.getTime()).toISOString().substring(0, 10);
+            datesArr.push(tempDateStr)
+            tempDate = new Date(tempDate.getTime())
+            tempDate.setDate(tempDate.getDate() +1)
+
+        }
+        return datesArr
+    }
+
 
     return {findLastUpdate, updateCommentDeletion, parseComments, errorMsg, validateNewCommentInput,
-        validateDeleteRequestInput, validateAllDates, validateGetRequest }
+        validateDeleteRequestInput, validateAllDates, validateGetRequest, validateTimestamp, validateStartAndEndDates,
+        getDatesArray}
 
 })()
 
