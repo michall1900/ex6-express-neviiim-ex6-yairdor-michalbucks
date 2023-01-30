@@ -25,7 +25,7 @@ const constantsErrorMessageModule= (function(){
     const DATES_INVALID_FORMAT = "One or more of the dates sent are in an invalid format"
     const CANT_PARSE_DATA = "could not parse data - wrong format"
     const REQUEST_NO_QUERY = "Request contains no query"
-    const MISSING_PARAMETERS = "required parameters are missing, The required parameters are image (url), username (string) " +
+    const MISSING_PARAMETERS = "required parameters are missing. The required parameters are image (date), username (string) " +
         "and comment (string)"
     const COULDNT_FIND_UPDATE_DATE = "Couldn't find last update"
     const NOT_LOGIN_ERROR = "You couldn't get to this page if you are not login"

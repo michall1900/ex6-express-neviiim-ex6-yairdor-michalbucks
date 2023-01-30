@@ -52,18 +52,6 @@ const commentsUtils = (function() {
     }
 
     /**
-     * The function validates that the received get request is in the right syntax needed to the request to function.
-     * @param req The request.
-     * @param res The response.
-     */
-    const validateGetRequest = (req, res) => {
-        if(req.query === undefined || req.query.images === undefined || !req.query.images.length) {
-            errorMsg(res,constants.MISSING_IMAGES);
-            return false;
-        }
-        return true;
-    }
-    /**
      * This function is make sure that start_date and end dates are legal.
      * @param req
      * @param res
@@ -84,35 +72,6 @@ const commentsUtils = (function() {
      */
     const isValidPictureDate = (date)=>{
         return (date && validations.isValidDate(date) && new Date(date) <= new Date())
-    }
-    /**
-     * This function validates that all the input in the request query is valid dates.
-     * @param req
-     * @param res
-     * @returns {boolean}
-     */
-    const validateAllDates = (req,res) => {
-        try{
-            let dataArray = JSON.parse(req.query.images);
-            if (!dataArray || !dataArray.length) {
-                errorMsg(res, constants.DATES_INVALID_FORMAT);
-                return false;
-            }
-            else{
-                for(let val of dataArray){
-                    let tempDate = new Date(val).toISOString().substring(0,10);
-                    if ( !validations.isValidDate(tempDate)|| new Date(tempDate).valueOf() > new Date().valueOf()){
-                        errorMsg(res,constants.DATES_INVALID_FORMAT);
-                        return false;
-                    }
-                }
-            }
-        }
-        catch {
-            errorMsg(res,constants.CANT_PARSE_DATA);
-            return false;
-        }
-        return true;
     }
 
     /**
@@ -195,7 +154,7 @@ const commentsUtils = (function() {
         if (!/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(str))
             return false;
         const d = new Date(str);
-        return d instanceof Date && !isNaN(d) && d.toISOString()===str; // valid date
+        return d instanceof Date && !isNaN(d) && d.toISOString()===str;
     }
 
     /**
@@ -214,7 +173,7 @@ const commentsUtils = (function() {
     }
 
     /**
-     * Return array of dates in picture format that in range of start and end dates
+     * Return array of dates in picture format dates that in range between start and end dates
      * @param startDateStr - the first picture's date
      * @param endDateStr - the last picture's date
      * @returns {*[]} - pictures' date array.
@@ -238,7 +197,7 @@ const commentsUtils = (function() {
 
 
     return {findLastUpdate, updateCommentDeletion, parseComments, errorMsg, validateNewCommentInput,
-        validateDeleteRequestInput, validateAllDates, validateGetRequest, validateTimestamp, validateStartAndEndDates,
+        validateDeleteRequestInput, validateAllDates, validateTimestamp, validateStartAndEndDates,
         getDatesArray}
 
 })()

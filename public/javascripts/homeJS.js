@@ -25,7 +25,7 @@
         let USER_DATE_ELEMENT;
         let CONTENT_ELEMENT;
         const MAX_WORDS_NUMBER_IN_DESCRIPTION = 30
-        let TIMESTAMP = new Date("0").toISOString()
+        let TIMESTAMP = new Date(0).toISOString()
         const INVALID_DATE_ERROR ="Error, you picked invalid date"
         const INVALID_CONTENT_ERROR= "Invalid comment content. Comment couldn't be empty or bigger than 128 characters"
 
@@ -64,7 +64,8 @@
         function isValidDate(object) {
 
             return ((!!object && isString(object) &&
-                object.toString().match(/\d{4}-\d{2}-\d{2}/)) && isValidTimeStamp(object))
+                object.toString().match(/\d{4}-\d{2}-\d{2}/)) &&
+                !(new Date(object).toString().toLowerCase().includes("invalid date"))) && new Date(object) <= new Date()
         }
 
 
@@ -84,7 +85,10 @@
          * @returns {boolean}
          */
         function isValidTimeStamp(object) {
-            return !!object && !((new Date(object)).toString().toLowerCase().includes("invalid date")) && new Date (object) <= new Date()
+            if (!object || !isString(object) || !(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(object)))
+                return false
+            const d = new Date(object);
+            return d instanceof Date && !isNaN(d) && d.toISOString()===object && d <= new Date();
         }
 
         /**
@@ -416,8 +420,6 @@
         ProgramGlobalsModule.IMAGES.push(...newImages)
         let params = new URLSearchParams()
 
-
-        //params.append("images", `[${getPicsDates(newImages).toString()}]`)
         console.log(ProgramGlobalsModule.IMAGES[ProgramGlobalsModule.IMAGES.length-1].getDate())
         console.log(ProgramGlobalsModule.IMAGES[0].getDate())
         params.append("start_date", ProgramGlobalsModule.IMAGES[ProgramGlobalsModule.IMAGES.length-1].getDate())
@@ -483,13 +485,12 @@
     function updateImagesComments() {
         clearTimeout(ProgramGlobalsModule.TIMEOUT)
         let params = new URLSearchParams()
-        //let dates = getPicsDates(ProgramGlobalsModule.IMAGES)
-        //dates.push(`"${ProgramGlobalsModule.TIMESTAMP}"`)
         params.append("start_date", ProgramGlobalsModule.IMAGES[ProgramGlobalsModule.IMAGES.length-1].getDate())
         params.append("end_date", ProgramGlobalsModule.IMAGES[0].getDate())
         params.append("timestamp", ProgramGlobalsModule.TIMESTAMP)
         params.append("images", `${params.toString()}`)
-        fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}/update?${params.toString()}`, setComments,getSpinnersElements(),0)
+        fetchRequest(`${ProgramGlobalsModule.COMMENTS_SERVER_URL}/update?${params.toString()}`,
+            setComments,getSpinnersElements(),0)
     }
 
     /**
@@ -504,19 +505,6 @@
         return spinnersElementsArr
     }
 
-
-    /**
-     * The function gets from the NASA response the pictures urls.
-     * @param data The NASA response.
-     * @returns {*[]} A list of the pictures Dates.
-     */
-    function getPicsDates(data) {
-        let pics = [];
-        data.forEach(function (pic) {
-            pics.push(`"${pic.getDate()}"`);
-        });
-        return pics;
-    }
 
     /**
      * The function validates that the received comment isn't empty.
@@ -571,11 +559,15 @@
          * @param comments
          */
         setComments(comments) {
-            this.#deleteComments(comments.delete)
-            if(comments.add && comments.add.length) {
-                let sortedComments = comments.add
-                sortedComments.sort((a, b) => {return a.comment.id - b.comment.id})
-                this.#setHtmlComments(sortedComments)
+            if(comments) {
+                this.#deleteComments(comments.delete)
+                if (comments.add && comments.add.length) {
+                    let sortedComments = comments.add
+                    sortedComments.sort((a, b) => {
+                        return a.comment.id - b.comment.id
+                    })
+                    this.#setHtmlComments(sortedComments)
+                }
             }
         }
 
@@ -659,14 +651,13 @@
             let dateCol = document.createElement('div')
             dateCol.className = "col-12 me-auto text-muted text-break"
             let date = new Date(val.updatedAt);
-            let localDate = date.toLocaleDateString();
-            let dateForTheDateOnly  = new Date(localDate)
-            let year = dateForTheDateOnly.getFullYear();
-            let month = (dateForTheDateOnly.getMonth() + 1).toString().padStart(2, '0');
-            let day = dateForTheDateOnly.getDate().toString().padStart(2, '0');
+            console.log(date)
+            let year = date.getFullYear();
+            let month = (date.getMonth() + 1).toString().padStart(2, '0');
+            let day = date.getDate().toString().padStart(2, '0');
 
             let localTime = date.toLocaleTimeString();
-            dateCol.innerText = `${year}\\${month}\\${day} ${localTime}`
+            dateCol.innerText = `${year}-${month}-${day} ${localTime}`
             row.appendChild(username)
             row.appendChild(dateCol)
             usersDataCol.appendChild(row)
